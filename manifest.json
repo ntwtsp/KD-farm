@@ -1,6 +1,6 @@
 {
-  "name": "KD ฟาร์ม",
-  "short_name": "KD ฟาร์ม",
+  "name": "คงเดช ฟาร์ม",
+  "short_name": "คงเดช ฟาร์ม",
   "description": "บันทึกน้ำหนักและการใช้อาหารหมูประจำวัน",
   "start_url": "/KD-farm/",
   "display": "standalone",
