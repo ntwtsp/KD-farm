@@ -2,10 +2,10 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "pig-feed-app",
+      "name": "kd-farm",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["serve", "-p", "3456", "."],
-      "port": 3456
+      "runtimeArgs": ["serve", "-p", "3457", "D:\\บันทึกการใช้อาหาร\\KD-farm"],
+      "port": 3457
     }
   ]
 }

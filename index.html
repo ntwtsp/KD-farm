@@ -523,10 +523,8 @@ function entryTanks(entry) {
 }
 function entryTotal(entry) { return entryTanks(entry).reduce((a,b)=>a+b,0); }
 
-let _tankCount = 1;
 function addTankField() {
   const idx = document.querySelectorAll('.tank-input').length;
-  _tankCount = idx + 1;
   const wrap = document.createElement('div');
   wrap.className = 'fs';
   wrap.id = 'tankRow-' + idx;
@@ -582,7 +580,8 @@ function calcEntry(entry, entries) {
     const prev = entries[idx-1];
     used = entryTotal(prev) + (entry.received||0) - remaining;
     const pt = entryTanks(prev), ct = entryTanks(entry);
-    usedTanks = pt.map((v,i) => v - (ct[i]||0));
+    const n = Math.max(pt.length, ct.length);
+    usedTanks = Array.from({length:n}, (_,i) => (pt[i]||0) - (ct[i]||0));
   }
   const ua = [];
   for (let i=Math.max(1,idx-4); i<=idx; i++) {
@@ -603,7 +602,11 @@ function batchStats(batch) {
     const u=entryTotal(p)+(c.received||0)-entryTotal(c);
     if(u>0) usedArr.push(u);
     const pt=entryTanks(p),ct=entryTanks(c);
-    pt.forEach((v,ti) => { const d=v-(ct[ti]||0); if(d>0){totalUsedPerTank[ti]=(totalUsedPerTank[ti]||0)+d;} });
+    const n=Math.max(pt.length,ct.length);
+    for(let ti=0;ti<n;ti++){
+      const d=(pt[ti]||0)-(ct[ti]||0);
+      if(d>0) totalUsedPerTank[ti]=(totalUsedPerTank[ti]||0)+d;
+    }
   }
   const last = entries[entries.length-1];
   const currentRemaining = last ? entryTotal(last) : 0;
@@ -1083,7 +1086,7 @@ function renderChart(entries){
   const last8=entries.slice(-8);
   if(last8.length<2){ctx.fillStyle='#9ca3af';ctx.font='11px sans-serif';ctx.textAlign='center';ctx.fillText('ต้องการข้อมูลอย่างน้อย 2 วัน',W/2,60);return;}
   const ud=[];
-  for(let i=1;i<last8.length;i++){const p=last8[i-1],c=last8[i];ud.push({date:c.date,used:Math.max(0,(p.w1||0)+(p.w2||0)+(c.received||0)-((c.w1||0)+(c.w2||0)))});}
+  for(let i=1;i<last8.length;i++){const p=last8[i-1],c=last8[i];ud.push({date:c.date,used:Math.max(0,entryTotal(p)+(c.received||0)-entryTotal(c))});}
   const maxV=Math.max(...ud.map(d=>d.used),1),pad={t:10,r:8,b:28,l:38};
   const cW=W-pad.l-pad.r,cH=120-pad.t-pad.b,bW=Math.min(28,(cW/ud.length)-5);
   [.25,.5,.75,1].forEach(p=>{
@@ -1335,10 +1338,15 @@ function getSyncUrl(){ return localStorage.getItem(SYNC_KEY)||DEFAULT_SYNC_URL; 
 function setSyncDot(s){
   const d=document.getElementById('syncDot');
   if(!d)return;
-  d.textContent = s==='syncing'?'🔄':s==='ok'?'☁️':'⚠️';
+  d.textContent = s==='syncing'?'🔄':s==='ok'?'☁️':s==='error'?'⚠️':'☁️';
 }
 
+let _syncTimer=null;
 async function syncUp(){
+  if(_syncTimer) clearTimeout(_syncTimer);
+  _syncTimer=setTimeout(_doSyncUp,800);
+}
+async function _doSyncUp(){
   const url=getSyncUrl(); if(!url)return;
   try{
     setSyncDot('syncing');
@@ -1356,6 +1364,18 @@ async function syncDown(){
     const text=await res.text();
     const cloud=JSON.parse(text);
     if(cloud&&cloud.batches){
+      const local=localStorage.getItem(DB_KEY);
+      if(local && local!==text){
+        try{
+          const lb=JSON.parse(local);
+          const localCount=(lb.batches||[]).reduce((a,b)=>a+(b.entries||[]).length,0);
+          const cloudCount=cloud.batches.reduce((a,b)=>a+(b.entries||[]).length,0);
+          if(localCount>cloudCount){
+            console.warn('syncDown: cloud has fewer entries — keeping local');
+            setSyncDot('ok'); return false;
+          }
+        }catch(_){}
+      }
       localStorage.setItem(DB_KEY,text);
       setSyncDot('ok');
       return true;
