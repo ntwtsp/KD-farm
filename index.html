@@ -1,0 +1,1386 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="KD ฟาร์ม" />
+  <meta name="theme-color" content="#15803d" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <title>KD ฟาร์ม</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+    :root{
+      --g:#16a34a;--gd:#15803d;--gl:#bbf7d0;--gp:#f0fdf4;
+      --y:#d97706;--yl:#fef3c7;
+      --r:#dc2626;--rl:#fee2e2;
+      --b:#2563eb;--bl:#dbeafe;
+      --p:#7c3aed;--pl:#ede9fe;
+      --o:#ea580c;--ol:#ffedd5;
+      --gray:#6b7280;--grl:#f3f4f6;
+      --shad:0 2px 12px rgba(0,0,0,.08);--rad:16px;
+      --st:env(safe-area-inset-top,0px);--sb:env(safe-area-inset-bottom,0px)
+    }
+    body{font-family:-apple-system,'Sarabun',sans-serif;background:#e8f5e9;min-height:100dvh;color:#1a2e1a;overscroll-behavior:none}
+
+    /* HEADER */
+    .hdr{background:linear-gradient(135deg,#14532d,#15803d 55%,#16a34a);padding:calc(var(--st) + 16px) 16px 14px;color:#fff;position:sticky;top:0;z-index:100;box-shadow:0 2px 14px rgba(0,0,0,.18)}
+    .hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+    .hdr h1{font-size:18px;font-weight:700}
+    .hdr-sub{font-size:11px;opacity:.75;margin-top:1px}
+    .batch-row{display:flex;align-items:center;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+    .batch-row::-webkit-scrollbar{display:none}
+    .bpill{padding:5px 13px;border-radius:20px;border:1.5px solid rgba(255,255,255,.4);background:rgba(255,255,255,.12);color:rgba(255,255,255,.85);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:inherit;flex-shrink:0;transition:all .2s}
+    .bpill.active{background:#fff;color:var(--gd);border-color:#fff}
+    .badd{padding:5px 11px;border-radius:20px;border:1.5px dashed rgba(255,255,255,.5);background:transparent;color:rgba(255,255,255,.8);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:inherit;flex-shrink:0}
+    .bpill-wrap{display:flex;align-items:center;gap:2px;flex-shrink:0}
+    .bedit-btn{width:22px;height:22px;border-radius:8px;border:none;background:rgba(255,255,255,.15);color:rgba(255,255,255,.8);font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding:0}
+    .bedit-btn:active{background:rgba(255,255,255,.3)}
+    .del-batch-btn{width:100%;padding:14px;border-radius:13px;border:none;font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;background:#fee2e2;color:#dc2626;margin-bottom:8px}
+
+    /* NAV */
+    .nav{position:fixed;bottom:0;left:0;right:0;background:#fff;display:flex;border-top:1px solid #e5e7eb;padding-bottom:var(--sb);z-index:100;box-shadow:0 -4px 20px rgba(0,0,0,.08)}
+    .nb{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 0 7px;border:none;background:none;cursor:pointer;color:#9ca3af;font-family:inherit;transition:color .2s}
+    .nb.active{color:var(--g)}
+    .nb svg{width:21px;height:21px}
+    .nb span{font-size:9px;font-weight:500}
+
+    /* EXPENSE */
+    .exp-sum{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+    .exp-sc{border-radius:14px;padding:13px 12px;box-shadow:var(--shad)}
+    .exp-sc .ei2{font-size:18px;margin-bottom:3px}
+    .exp-sc .ev{font-size:18px;font-weight:700;line-height:1.1}
+    .exp-sc .el{font-size:10px;color:var(--gray);margin-top:2px}
+    .exp-total{background:linear-gradient(135deg,#1e1b4b,#3730a3);border-radius:14px;padding:14px;margin-bottom:12px;color:#fff;text-align:center}
+    .exp-total .ett{font-size:12px;opacity:.75;margin-bottom:4px}
+    .exp-total .etv{font-size:28px;font-weight:800}
+    .exp-sec{background:#fff;border-radius:14px;padding:14px;box-shadow:var(--shad);margin-bottom:10px}
+    .exp-sec-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+    .exp-sec-title{font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px}
+    .exp-add-btn{padding:5px 12px;border-radius:8px;border:none;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;background:var(--gp);color:var(--gd)}
+    .exp-item{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid #f3f4f6}
+    .exp-item:last-child{border-bottom:none}
+    .exp-item .ed{font-size:12px;color:var(--gray)}
+    .exp-item .en{font-size:12px;font-weight:600;color:#374151}
+    .exp-item .ea{font-size:15px;font-weight:700;color:#111827}
+    .exp-empty{text-align:center;padding:16px;font-size:12px;color:var(--gray)}
+
+    /* PAGES */
+    .page{display:none;padding:14px 14px calc(76px + var(--sb));animation:fi .2s ease}
+    .page.active{display:block}
+    @keyframes fi{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+
+    /* CARD */
+    .card{background:#fff;border-radius:var(--rad);padding:16px;box-shadow:var(--shad);margin-bottom:12px}
+
+    /* STATS GRID */
+    .sg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+    .sc{background:#fff;border-radius:14px;padding:14px 12px;box-shadow:var(--shad);text-align:center}
+    .sc .ico{font-size:20px;margin-bottom:3px}
+    .sc .val{font-size:20px;font-weight:700;line-height:1.1}
+    .sc .lbl{font-size:10px;color:var(--gray);margin-top:2px}
+    .sc.sg{background:linear-gradient(135deg,#f0fdf4,#dcfce7)}
+    .sc.sy{background:linear-gradient(135deg,#fffbeb,#fef3c7)}
+    .sc.sb{background:linear-gradient(135deg,#eff6ff,#dbeafe)}
+    .sc.sp{background:linear-gradient(135deg,#faf5ff,#ede9fe)}
+    .sc.sr{background:linear-gradient(135deg,#fff5f5,#fee2e2)}
+
+    /* PIG STATS */
+    .pig-hero{background:linear-gradient(135deg,#581c87,#7c3aed);border-radius:14px;padding:16px;margin-bottom:12px;color:#fff;box-shadow:var(--shad)}
+    .ph-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+    .ph-top h3{font-size:14px;font-weight:700;opacity:.85}
+    .ph-count{font-size:42px;font-weight:800;line-height:1;text-align:center;margin-bottom:4px}
+    .ph-lbl{font-size:12px;opacity:.75;text-align:center;margin-bottom:14px}
+    .ph-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+    .ph-item{background:rgba(255,255,255,.12);border-radius:9px;padding:8px 4px;text-align:center}
+    .ph-item .pi-val{font-size:16px;font-weight:700}
+    .ph-item .pi-lbl{font-size:9px;opacity:.75;margin-top:2px}
+
+    /* PIG EVENT BUTTONS */
+    .evt-btns{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+    .evt-btn{padding:12px 8px;border-radius:13px;border:none;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;transition:transform .1s}
+    .evt-btn:active{transform:scale(.96)}
+    .evt-btn .ei{font-size:22px}
+    .evt-btn.rcv{background:linear-gradient(135deg,#dbeafe,#bfdbfe);color:#1d4ed8}
+    .evt-btn.sell{background:linear-gradient(135deg,#dcfce7,#bbf7d0);color:#15803d}
+    .evt-btn.dead{background:linear-gradient(135deg,#fee2e2,#fecaca);color:#991b1b}
+    .evt-btn.move{background:linear-gradient(135deg,#fef3c7,#fde68a);color:#92400e}
+    .evt-btn.cull{background:linear-gradient(135deg,#ffedd5,#fed7aa);color:#9a3412}
+    .evt-btn.note{background:linear-gradient(135deg,#f3f4f6,#e5e7eb);color:#374151}
+
+    /* EVT HISTORY */
+    .eitem{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid #f3f4f6}
+    .eitem:last-child{border-bottom:none}
+    .etag{min-width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+    .etag.rcv{background:#dbeafe}
+    .etag.sell{background:#dcfce7}
+    .etag.dead{background:#fee2e2}
+    .etag.move{background:#fef3c7}
+    .etag.cull{background:#ffedd5}
+    .etag.note{background:#f3f4f6}
+    .einfo{flex:1;min-width:0}
+    .einfo .et{font-size:13px;font-weight:600}
+    .einfo .es{font-size:11px;color:var(--gray);margin-top:1px}
+    .enum{font-size:17px;font-weight:700}
+    .enum.pos{color:var(--b)}
+    .enum.neg{color:var(--r)}
+
+    /* FEED SECTIONS (same as before) */
+    .stitle{font-size:12px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.6px;margin:14px 0 7px}
+    .sbar-bg{height:9px;background:#e5e7eb;border-radius:99px;overflow:hidden}
+    .sbar-fill{height:100%;border-radius:99px;transition:width .6s ease}
+    .erow{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid #f3f4f6}
+    .erow:last-child{border-bottom:none}
+    .edtb{min-width:44px;text-align:center;background:var(--gp);border-radius:10px;padding:5px 4px}
+    .edtb .day{font-size:16px;font-weight:700;color:var(--g);line-height:1}
+    .edtb .mon{font-size:10px;color:var(--gray)}
+    .einf{flex:1;min-width:0}
+    .einf .w{font-size:12px;font-weight:600}
+    .einf .s{font-size:11px;color:var(--gray);margin-top:1px}
+    .ebadge{font-size:11px;font-weight:600;padding:3px 8px;border-radius:7px;white-space:nowrap}
+    .bg{background:var(--gl);color:#15803d}
+    .by{background:var(--yl);color:#92400e}
+    .br{background:var(--rl);color:#991b1b}
+
+    /* FORM */
+    .fs{margin-bottom:16px}
+    .fs label{display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:5px}
+    .fs input,.fs select,.fs textarea{width:100%;padding:13px 15px;border:2px solid #e5e7eb;border-radius:12px;font-size:16px;font-family:inherit;background:#fff;color:#111827;-webkit-appearance:none;transition:border-color .2s,box-shadow .2s}
+    .fs input:focus,.fs select:focus,.fs textarea:focus{outline:none;border-color:var(--g);box-shadow:0 0 0 3px rgba(22,163,74,.12)}
+    .fs textarea{resize:none;height:70px}
+    .ig{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .rtoggle{display:flex;align-items:center;gap:10px;padding:11px 13px;background:#f9fafb;border-radius:12px;margin-bottom:14px;cursor:pointer}
+    .rtoggle input[type=checkbox]{width:20px;height:20px;accent-color:var(--g);cursor:pointer}
+    .rtoggle .tl{font-size:13px;font-weight:500}
+    .fpreview{background:var(--gp);border:1.5px dashed #86efac;border-radius:12px;padding:13px;margin-bottom:16px}
+    .fpreview .pt{font-size:12px;font-weight:600;color:var(--g);margin-bottom:8px}
+    .fpreview .pg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .fpreview .pi .pl{font-size:10px;color:var(--gray)}
+    .fpreview .pi .pv{font-size:15px;font-weight:700;color:#111827}
+    .btn-sub{width:100%;padding:15px;background:linear-gradient(135deg,#15803d,#16a34a);color:#fff;border:none;border-radius:14px;font-size:16px;font-weight:700;font-family:inherit;cursor:pointer;box-shadow:0 4px 14px rgba(22,163,74,.35);transition:transform .1s}
+    .btn-sub:active{transform:scale(.98)}
+
+    /* TABS inside page */
+    .tabs{display:flex;gap:0;background:#f3f4f6;border-radius:12px;padding:3px;margin-bottom:14px}
+    .tab{flex:1;padding:8px 0;border:none;background:transparent;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;border-radius:9px;color:var(--gray);transition:all .2s}
+    .tab.active{background:#fff;color:var(--g);box-shadow:0 1px 4px rgba(0,0,0,.1)}
+
+    /* HISTORY FILTER */
+    .hf{display:flex;gap:7px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px;scrollbar-width:none}
+    .hf::-webkit-scrollbar{display:none}
+    .fchip{padding:6px 13px;border-radius:20px;border:1.5px solid #e5e7eb;background:#fff;font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;font-family:inherit;transition:all .2s}
+    .fchip.active{background:var(--g);color:#fff;border-color:var(--g)}
+
+    /* HISTORY ENTRY */
+    .hentry{background:#fff;border-radius:14px;padding:13px 13px 13px 17px;margin-bottom:9px;box-shadow:var(--shad);position:relative;overflow:hidden}
+    .hentry::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--g)}
+    .hentry.rc::before{background:var(--b)}
+    .hentry.wn::before{background:var(--y)}
+    .hentry.dg::before{background:var(--r)}
+    .he-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px}
+    .he-dt{font-size:13px;font-weight:700;color:#111827}
+    .he-rc{font-size:11px;background:var(--bl);color:#1d4ed8;padding:3px 8px;border-radius:6px;font-weight:600}
+    .he-g{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+    .he-i .hl{font-size:10px;color:var(--gray);margin-bottom:1px}
+    .he-i .hv{font-size:13px;font-weight:600;color:#111827}
+    .he-i .hv.gc{color:var(--g)}.he-i .hv.yc{color:var(--y)}.he-i .hv.rc2{color:var(--r)}
+    .delbtn{position:absolute;right:9px;top:9px;width:26px;height:26px;border-radius:7px;border:none;background:#fee2e2;color:var(--r);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s}
+    .hentry:hover .delbtn,.hentry:focus-within .delbtn{opacity:1}
+
+    /* BSUM */
+    .bsum{background:linear-gradient(135deg,#14532d,#15803d);border-radius:14px;padding:14px;margin-bottom:12px;color:#fff}
+    .bsum .bt{font-size:13px;font-weight:700;opacity:.8;margin-bottom:8px}
+    .bsum .bg2{display:grid;grid-template-columns:repeat(3,1fr);gap:8px 10px}
+    .bsum .bi .bl{font-size:10px;opacity:.7}
+    .bsum .bi .bv{font-size:15px;font-weight:700}
+
+    /* MODAL */
+    .overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
+    .overlay.open{opacity:1;pointer-events:all}
+    .modal{background:#fff;border-radius:24px 24px 0 0;padding:24px 20px calc(20px + var(--sb));width:100%;max-width:480px;transform:translateY(100%);transition:transform .3s cubic-bezier(.32,0,.15,1)}
+    .overlay.open .modal{transform:translateY(0)}
+    .modal h3{font-size:17px;font-weight:700;margin-bottom:16px;text-align:center}
+    .mbtn{width:100%;padding:14px;border-radius:13px;border:none;font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;margin-bottom:8px}
+    .mbtn.pri{background:linear-gradient(135deg,#15803d,#16a34a);color:#fff}
+    .mbtn.cnl{background:var(--grl);color:#374151}
+
+    /* PIG MODAL */
+    .pig-modal-icon{text-align:center;font-size:48px;margin-bottom:8px}
+    .pig-modal-title{text-align:center;font-size:18px;font-weight:700;margin-bottom:4px}
+    .pig-modal-sub{text-align:center;font-size:13px;color:var(--gray);margin-bottom:16px}
+
+    /* EMPTY */
+    .empty{text-align:center;padding:40px 20px;color:var(--gray)}
+    .empty .ei{font-size:40px;margin-bottom:8px}
+    .empty p{font-size:13px}
+
+    /* WEIGHT & FCR */
+    .wf-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+    .wf-hd-title{font-size:13px;font-weight:700;color:#374151}
+    .wf-add-btn{padding:5px 12px;border-radius:8px;border:none;background:var(--gp);color:var(--gd);font-size:12px;font-weight:600;font-family:inherit;cursor:pointer}
+    .wf-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:6px}
+    .wf-item .wfl{font-size:10px;color:var(--gray);margin-bottom:2px}
+    .wf-item .wfv{font-size:16px;font-weight:700;color:#111827}
+    .wf-item .wfv.gc{color:var(--g)}.wf-item .wfv.yc{color:var(--y)}
+    .fcr-wrap{margin-top:14px;padding-top:14px;border-top:1px solid #f3f4f6}
+    .fcr-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+    .fcr-title{font-size:13px;font-weight:700;color:#374151}
+    .fcr-badge{font-size:11px;font-weight:600;padding:4px 10px;border-radius:8px}
+    .fcr-badge.good{background:#dcfce7;color:#15803d}
+    .fcr-badge.ok{background:#fef3c7;color:#92400e}
+    .fcr-badge.bad{background:#fee2e2;color:#991b1b}
+    .fcr-badge.none{background:#f3f4f6;color:#6b7280}
+    .fcr-num-row{display:flex;align-items:flex-end;gap:6px;margin-bottom:10px}
+    .fcr-num{font-size:48px;font-weight:800;line-height:1;color:#111827}
+    .fcr-num-sub{font-size:12px;color:var(--gray);padding-bottom:8px}
+    .fcr-detail{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .fcr-di .fdl{font-size:10px;color:var(--gray);margin-bottom:1px}
+    .fcr-di .fdv{font-size:13px;font-weight:600;color:#111827}
+    .wt-history{margin-top:10px}
+    .wt-item{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f9fafb}
+    .wt-item:last-child{border-bottom:none}
+    .wt-item .wd{font-size:12px;color:var(--gray)}
+    .wt-item .wv{font-size:13px;font-weight:600}
+
+    /* SYNC */
+    .sync-dot{cursor:pointer;font-size:20px;user-select:none;transition:transform .2s}
+    .sync-dot:active{transform:scale(.85)}
+    .sync-url-input{width:100%;padding:13px 15px;border:2px solid #e5e7eb;border-radius:12px;font-size:14px;font-family:inherit;background:#fff;color:#111827;margin-bottom:4px}
+    .sync-url-input:focus{outline:none;border-color:var(--b)}
+    .sync-hint{font-size:11px;color:var(--gray);margin-bottom:16px;line-height:1.5}
+
+    /* TOAST */
+    .toast{position:fixed;bottom:calc(76px + var(--sb) + 10px);left:50%;transform:translateX(-50%) translateY(20px);background:#111827;color:#fff;padding:10px 20px;border-radius:99px;font-size:13px;font-weight:500;opacity:0;transition:all .3s;z-index:300;pointer-events:none;white-space:nowrap}
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  </style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-top">
+    <div><h1>🐷 KD ฟาร์ม</h1><div class="hdr-sub" id="headerDate"></div></div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div id="syncDot" class="sync-dot" onclick="openSyncModal()" title="ซิงค์ข้อมูล">☁️</div>
+      <div style="font-size:26px">💰</div>
+    </div>
+  </div>
+  <div class="batch-row" id="batchRow"></div>
+</div>
+
+<!-- HOME -->
+<div id="page-home" class="page active">
+  <div class="sg">
+    <div class="sc sg"><div class="ico">⚖️</div><div class="val" id="sRemain">—</div><div class="lbl">อาหารคงเหลือ (กก.)</div></div>
+    <div class="sc sp"><div class="ico">🐷</div><div class="val" id="sPigs">—</div><div class="lbl">หมูปัจจุบัน (ตัว)</div></div>
+    <div class="sc sy"><div class="ico">📅</div><div class="val" id="sDays">—</div><div class="lbl">ใช้ได้อีก (วัน)</div></div>
+    <div class="sc sb"><div class="ico">📊</div><div class="val" id="sAvg">—</div><div class="lbl">ค่าเฉลี่ย/วัน (กก.)</div></div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <span style="font-size:12px;font-weight:600;color:#374151">สถานะอาหาร</span>
+      <span id="statusLabel" style="font-size:11px;font-weight:600;padding:3px 9px;border-radius:7px"></span>
+    </div>
+    <div class="sbar-bg"><div class="sbar-fill" id="sbarFill" style="width:0%"></div></div>
+    <div style="font-size:10px;color:var(--gray);margin-top:4px;text-align:right" id="sbarLbl"></div>
+  </div>
+
+  <div id="batchSummary"></div>
+
+  <div class="stitle">บันทึกอาหารล่าสุด</div>
+  <div class="card" style="padding:8px 15px"><div id="recentList"><div class="empty"><div class="ei">📋</div><p>ยังไม่มีข้อมูล</p></div></div></div>
+
+  <div class="stitle">กราฟการใช้ 7 วัน</div>
+  <div class="card" style="padding:12px"><canvas id="chartCanvas" height="120" style="width:100%"></canvas></div>
+
+  <button onclick="exportToExcel()" style="width:100%;padding:15px;background:linear-gradient(135deg,#1d4ed8,#2563eb);color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;box-shadow:0 4px 14px rgba(37,99,235,.35);display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:4px">
+    <span style="font-size:20px">📊</span> ส่งออกข้อมูล Excel
+  </button>
+</div>
+
+<!-- PIGS PAGE -->
+<div id="page-pigs" class="page">
+  <div id="pigHero"></div>
+
+  <div id="weightFcrSection"></div>
+
+  <div class="stitle">บันทึกการเปลี่ยนแปลง</div>
+  <div class="evt-btns">
+    <button class="evt-btn rcv" onclick="openPigModal('รับเข้า')"><div class="ei">🚛</div><span>รับเข้า</span></button>
+    <button class="evt-btn sell" onclick="openPigModal('ขาย')"><div class="ei">💰</div><span>ขาย</span></button>
+    <button class="evt-btn dead" onclick="openPigModal('ตาย')"><div class="ei">💀</div><span>ตาย</span></button>
+    <button class="evt-btn move" onclick="openPigModal('ย้าย')"><div class="ei">🚚</div><span>ย้าย</span></button>
+    <button class="evt-btn cull" onclick="openPigModal('คัดทิ้ง')"><div class="ei">🗑️</div><span>คัดทิ้ง</span></button>
+    <button class="evt-btn note" onclick="openPigModal('หมายเหตุ')"><div class="ei">📝</div><span>บันทึก</span></button>
+  </div>
+
+  <div class="stitle">ประวัติการเคลื่อนไหว</div>
+  <div class="card" style="padding:8px 15px"><div id="pigEventList"><div class="empty"><div class="ei">🐷</div><p>ยังไม่มีข้อมูล</p></div></div></div>
+</div>
+
+<!-- ADD FEED -->
+<div id="page-add" class="page">
+  <div class="card">
+    <div style="font-size:16px;font-weight:700;margin-bottom:16px">➕ บันทึกอาหารประจำวัน</div>
+    <div class="fs"><label>วันที่</label><input type="date" id="fDate" /></div>
+    <label class="rtoggle" for="cbRcv"><input type="checkbox" id="cbRcv" /><span class="tl">🚛 มีอาหารรับเข้าวันนี้</span></label>
+    <div id="rcvField" style="display:none" class="fs"><label>รับเข้า (กก.)</label><input type="number" id="fRcv" placeholder="0" min="0" inputmode="numeric" /></div>
+    <div class="ig">
+      <div class="fs"><label>ถัง 1 (กก.)</label><input type="number" id="fW1" placeholder="0" min="0" inputmode="numeric" /></div>
+      <div class="fs"><label>ถัง 2 (กก.)</label><input type="number" id="fW2" placeholder="0" min="0" inputmode="numeric" /></div>
+    </div>
+    <div class="fpreview" id="fpreview" style="display:none">
+      <div class="pt">📋 ผลคำนวณ</div>
+      <div class="pg">
+        <div class="pi"><div class="pl">คงเหลือ</div><div class="pv" id="pRemain">—</div></div>
+        <div class="pi"><div class="pl">ใช้ไป</div><div class="pv" id="pUsed">—</div></div>
+        <div class="pi"><div class="pl">ใช้ได้อีก</div><div class="pv" id="pDays">—</div></div>
+        <div class="pi"><div class="pl">เฉลี่ย/วัน</div><div class="pv" id="pAvg">—</div></div>
+      </div>
+    </div>
+    <div id="sameDayWarn" style="display:none;background:#fef3c7;border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:#92400e">⚠️ มีข้อมูลวันนี้แล้ว — กดบันทึกเพื่อ <b>แทนที่</b></div>
+    <button class="btn-sub" onclick="saveEntry()">💾 บันทึกอาหาร</button>
+  </div>
+</div>
+
+<!-- HISTORY -->
+<div id="page-history" class="page">
+  <div class="tabs">
+    <button class="tab active" onclick="switchHistTab('feed',this)">🌾 อาหาร</button>
+    <button class="tab" onclick="switchHistTab('pigs',this)">🐷 หมู</button>
+  </div>
+  <div id="htab-feed">
+    <div class="hf" id="filterRow">
+      <button class="fchip active" data-f="all">ทั้งหมด</button>
+      <button class="fchip" data-f="7">7 วัน</button>
+      <button class="fchip" data-f="30">30 วัน</button>
+      <button class="fchip" data-f="rcv">มีรับเข้า</button>
+    </div>
+    <div id="historyList"></div>
+  </div>
+  <div id="htab-pigs" style="display:none">
+    <div id="pigHistoryList"></div>
+  </div>
+</div>
+
+<!-- EXPENSE PAGE -->
+<div id="page-expense" class="page">
+  <div id="expSummary"></div>
+  <div id="expSections"></div>
+</div>
+
+<!-- NAV -->
+<nav class="nav">
+  <button class="nb active" onclick="showPage('home',this)">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+    <span>หน้าหลัก</span>
+  </button>
+  <button class="nb" onclick="showPage('pigs',this)">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4.5 6.375a4.125 4.125 0 1 1 8.25 0 4.125 4.125 0 0 1-8.25 0ZM14.25 8.625a3.375 3.375 0 1 1 6.75 0 3.375 3.375 0 0 1-6.75 0ZM1.5 19.125a7.125 7.125 0 0 1 14.25 0v.003l-.001.119a.75.75 0 0 1-.363.63 13.067 13.067 0 0 1-6.761 1.873c-2.472 0-4.786-.684-6.76-1.873a.75.75 0 0 1-.364-.63l-.001-.122ZM17.25 19.128l-.001.144a2.25 2.25 0 0 1-.233.96 10.088 10.088 0 0 0 5.06-1.01.75.75 0 0 0 .42-.643 4.875 4.875 0 0 0-6.957-4.611 8.586 8.586 0 0 1 1.71 5.157v.003Z"/></svg>
+    <span>จำนวนหมู</span>
+  </button>
+  <button class="nb" onclick="showPage('add',this)">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
+    <span>บันทึกอาหาร</span>
+  </button>
+  <button class="nb" onclick="showPage('history',this)">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+    <span>ประวัติ</span>
+  </button>
+  <button class="nb" onclick="showPage('expense',this)">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
+    <span>ค่าใช้จ่าย</span>
+  </button>
+</nav>
+
+<!-- MODAL: EDIT BATCH -->
+<div class="overlay" id="ovBatchEdit" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal">
+    <h3>✏️ แก้ไขรุ่น</h3>
+    <div class="fs"><label>ชื่อรุ่น</label><input type="text" id="mbeNameEdit" placeholder="เช่น รุ่น 2" /></div>
+    <button class="mbtn pri" onclick="saveBatchName()">💾 บันทึกชื่อ</button>
+    <button class="del-batch-btn" id="delBatchBtn" onclick="deleteBatch()">🗑️ ลบรุ่นนี้</button>
+    <button class="mbtn cnl" onclick="document.getElementById('ovBatchEdit').classList.remove('open')">ยกเลิก</button>
+  </div>
+</div>
+
+<!-- MODAL: NEW BATCH -->
+<div class="overlay" id="ovBatch" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal">
+    <h3>🐣 เพิ่มรุ่นใหม่</h3>
+    <div class="fs"><label>ชื่อรุ่น</label><input type="text" id="mbName" placeholder="เช่น รุ่น 2" /></div>
+    <div class="fs"><label>วันที่เริ่ม</label><input type="date" id="mbDate" /></div>
+    <button class="mbtn pri" onclick="confirmNewBatch()">✅ สร้างรุ่นใหม่</button>
+    <button class="mbtn cnl" onclick="document.getElementById('ovBatch').classList.remove('open')">ยกเลิก</button>
+  </div>
+</div>
+
+<!-- MODAL: WEIGHT -->
+<div class="overlay" id="ovWeight" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal">
+    <h3 id="wModalTitle">⚖️ บันทึกน้ำหนักหมู</h3>
+    <div class="fs" id="wDateWrap"><label>วันที่</label><input type="date" id="wDate" /></div>
+    <div class="fs"><label>น้ำหนักเฉลี่ย (กก./ตัว)</label><input type="number" id="wAvgWeight" placeholder="0.0" min="0" step="0.1" inputmode="decimal" /></div>
+    <div class="fs"><label>หมายเหตุ (ไม่บังคับ)</label><textarea id="wNote" placeholder="เช่น ชั่งเฉพาะตัวโต..."></textarea></div>
+    <button class="mbtn pri" onclick="saveWeight()">💾 บันทึก</button>
+    <button class="mbtn cnl" onclick="document.getElementById('ovWeight').classList.remove('open')">ยกเลิก</button>
+  </div>
+</div>
+
+<!-- MODAL: PIG EVENT -->
+<div class="overlay" id="ovPig" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal">
+    <div class="pig-modal-icon" id="pmIcon"></div>
+    <div class="pig-modal-title" id="pmTitle"></div>
+    <div class="pig-modal-sub" id="pmSub"></div>
+    <div class="fs"><label>วันที่</label><input type="date" id="pmDate" /></div>
+    <div class="fs" id="pmCountWrap"><label>จำนวน (ตัว)</label><input type="number" id="pmCount" placeholder="0" min="0" inputmode="numeric" /></div>
+    <div class="fs"><label>หมายเหตุ (ไม่บังคับ)</label><textarea id="pmNote" placeholder="รายละเอียดเพิ่มเติม..."></textarea></div>
+    <button class="mbtn pri" onclick="savePigEvent()">💾 บันทึก</button>
+    <button class="mbtn cnl" onclick="document.getElementById('ovPig').classList.remove('open')">ยกเลิก</button>
+  </div>
+</div>
+
+<!-- MODAL: SYNC -->
+<div class="overlay" id="ovSync" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal">
+    <h3>☁️ ซิงค์ข้อมูล Cloud</h3>
+    <div style="background:#eff6ff;border-radius:12px;padding:12px;margin-bottom:16px;font-size:12px;color:#1d4ed8;line-height:1.6">
+      ข้อมูลจะ sync อัตโนมัติทุกครั้งที่บันทึก<br>เปิดแอปทีไหน ข้อมูลเหมือนกันทุกเครื่อง
+    </div>
+    <div class="fs">
+      <label>Google Apps Script URL</label>
+      <input class="sync-url-input" type="url" id="syncUrlInput" placeholder="https://script.google.com/macros/s/.../exec" />
+      <div class="sync-hint">วาง URL จาก Deploy → New deployment → Web app</div>
+    </div>
+    <div id="syncTestResult" style="margin-bottom:12px;font-size:12px;min-height:18px"></div>
+    <button class="mbtn pri" onclick="saveSyncUrl()">💾 บันทึกและซิงค์</button>
+    <button class="mbtn" style="background:#f0fdf4;color:#15803d;margin-bottom:8px" onclick="testSync()">🔌 ทดสอบการเชื่อมต่อ</button>
+    <button class="mbtn cnl" onclick="document.getElementById('ovSync').classList.remove('open')">ปิด</button>
+  </div>
+</div>
+
+<!-- MODAL: EXPENSE -->
+<div class="overlay" id="ovExp" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal">
+    <h3 id="expModalTitle">➕ เพิ่มค่าใช้จ่าย</h3>
+    <div class="fs" id="expMonthWrap" style="display:none"><label>เดือน</label><input type="month" id="expMonth" /></div>
+    <div class="fs" id="expDateWrap"><label>วันที่</label><input type="date" id="expDate" /></div>
+    <div class="fs" id="expNameWrap" style="display:none"><label>รายการ</label><input type="text" id="expName" placeholder="เช่น ค่าเครื่องจักร, ค่าแรงภายนอก..." /></div>
+    <div class="fs"><label>จำนวนเงิน (บาท)</label><input type="number" id="expAmount" placeholder="0" min="0" inputmode="decimal" /></div>
+    <div class="fs"><label>หมายเหตุ (ไม่บังคับ)</label><textarea id="expNote" placeholder="รายละเอียดเพิ่มเติม..."></textarea></div>
+    <button class="mbtn pri" onclick="saveExpense()">💾 บันทึก</button>
+    <button class="mbtn cnl" onclick="document.getElementById('ovExp').classList.remove('open')">ยกเลิก</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+<script>
+// ─── SEED ──────────────────────────────────────────────────────────────────
+const SEED_FEED = [];
+
+// ─── DB ────────────────────────────────────────────────────────────────────
+const DB_KEY = 'pigFeedData_v3';
+
+function loadDB() {
+  try {
+    const d = JSON.parse(localStorage.getItem(DB_KEY));
+    if (d && d.batches) return d;
+  } catch {}
+  const initial = {
+    activeBatchId: 1,
+    batches: [{
+      id: 1, name: 'รุ่น 1', startDate: '2026-02-23',
+      entries: SEED_FEED.map((e, i) => ({ id: i+1, ...e })),
+      pigEvents: [], weightRecords: [], intakeAvgWeight: null, expenseRecords: []
+    }]
+  };
+  // migrate from v2
+  try {
+    const v2 = JSON.parse(localStorage.getItem('pigFeedData_v2'));
+    if (v2 && v2.batches) {
+      initial.batches = v2.batches.map(b => ({ ...b, pigEvents: b.pigEvents || [], weightRecords: b.weightRecords || [], intakeAvgWeight: b.intakeAvgWeight || null, expenseRecords: b.expenseRecords || [] }));
+      initial.activeBatchId = v2.activeBatchId;
+    }
+  } catch {}
+  saveDB(initial);
+  return initial;
+}
+
+function saveDB(db) { localStorage.setItem(DB_KEY, JSON.stringify(db)); syncUp(); }
+function getActiveBatch(db) { return db.batches.find(b => b.id === db.activeBatchId); }
+
+// ─── PIG CALC ──────────────────────────────────────────────────────────────
+const PIG_POSITIVE = ['รับเข้า'];
+const PIG_META = ['หมายเหตุ'];
+
+function calcPigCount(pigEvents) {
+  let count = 0;
+  const totals = { รับเข้า:0, ขาย:0, ตาย:0, ย้าย:0, คัดทิ้ง:0 };
+  pigEvents.forEach(e => {
+    if (PIG_META.includes(e.type)) return;
+    const n = e.count || 0;
+    if (PIG_POSITIVE.includes(e.type)) count += n;
+    else count -= n;
+    if (totals[e.type] !== undefined) totals[e.type] += n;
+  });
+  return { count, totals };
+}
+
+// ─── FEED CALC ─────────────────────────────────────────────────────────────
+function calcEntry(entry, entries) {
+  const idx = entries.findIndex(e => e.id === entry.id);
+  const remaining = (entry.w1||0)+(entry.w2||0);
+  let used = null, usedT1 = null, usedT2 = null;
+  if (idx > 0) {
+    const prev = entries[idx-1];
+    used = (prev.w1||0)+(prev.w2||0)+(entry.received||0)-remaining;
+    usedT1 = (prev.w1||0) - (entry.w1||0);
+    usedT2 = (prev.w2||0) - (entry.w2||0);
+  }
+  const ua = [];
+  for (let i=Math.max(1,idx-4); i<=idx; i++) {
+    const p=entries[i-1],c=entries[i];
+    const u=(p.w1||0)+(p.w2||0)+(c.received||0)-((c.w1||0)+(c.w2||0));
+    if(u>0) ua.push(u);
+  }
+  const avg = ua.length ? ua.reduce((a,b)=>a+b)/ua.length : null;
+  return { remaining, used, usedT1, usedT2, avg, days: avg&&avg>0 ? remaining/avg : null };
+}
+
+function batchStats(batch) {
+  const entries = batch.entries;
+  let totalRcv=0, usedArr=[], totalUsedT1=0, totalUsedT2=0;
+  entries.forEach(e => totalRcv += (e.received||0));
+  for (let i=1;i<entries.length;i++){
+    const p=entries[i-1],c=entries[i];
+    const u=(p.w1||0)+(p.w2||0)+(c.received||0)-((c.w1||0)+(c.w2||0));
+    if(u>0) usedArr.push(u);
+    const d1=(p.w1||0)-(c.w1||0), d2=(p.w2||0)-(c.w2||0);
+    if(d1>0) totalUsedT1+=d1;
+    if(d2>0) totalUsedT2+=d2;
+  }
+  const last = entries[entries.length-1];
+  const currentRemaining = last ? (last.w1||0)+(last.w2||0) : 0;
+  const totalUsed = totalRcv - currentRemaining;
+  return { totalRcv, totalUsed, totalUsedT1, totalUsedT2, days:entries.length,
+    avgPerDay: usedArr.length?usedArr.reduce((a,b)=>a+b)/usedArr.length:0 };
+}
+
+// ─── FORMAT ────────────────────────────────────────────────────────────────
+const MONTHS=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+const EVT_CFG = {
+  'รับเข้า':{icon:'🚛',cls:'rcv',sign:'+'},
+  'ขาย':    {icon:'💰',cls:'sell',sign:'-'},
+  'ตาย':    {icon:'💀',cls:'dead',sign:'-'},
+  'ย้าย':   {icon:'🚚',cls:'move',sign:'-'},
+  'คัดทิ้ง':{icon:'🗑️',cls:'cull',sign:'-'},
+  'หมายเหตุ':{icon:'📝',cls:'note',sign:''},
+};
+function fmt(v){if(v==null)return'—';return Number(v).toLocaleString('th-TH',{maximumFractionDigits:0})}
+function fmtDate(s){const d=new Date(s);return`${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()+543}`}
+
+// ─── NAV ───────────────────────────────────────────────────────────────────
+let curPage='home', curFilter='all', curHistTab='feed';
+
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  btn.classList.add('active');
+  curPage=name;
+  if(name==='home') renderHome();
+  if(name==='pigs') renderPigs();
+  if(name==='history'){renderHistory(curFilter);renderPigHistory();}
+  if(name==='add') resetForm();
+  if(name==='expense') renderExpense();
+}
+
+function switchHistTab(tab,btn) {
+  curHistTab=tab;
+  document.querySelectorAll('.tabs .tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('htab-feed').style.display=tab==='feed'?'block':'none';
+  document.getElementById('htab-pigs').style.display=tab==='pigs'?'block':'none';
+}
+
+// ─── BATCH HEADER ──────────────────────────────────────────────────────────
+function renderBatchHeader() {
+  const db=loadDB();
+  document.getElementById('batchRow').innerHTML =
+    db.batches.map(b=>`
+      <div class="bpill-wrap">
+        <button class="bpill${b.id===db.activeBatchId?' active':''}" onclick="switchBatch(${b.id})">${b.name}</button>
+        <button class="bedit-btn" onclick="openBatchEditModal(${b.id})">✏️</button>
+      </div>`).join('')+
+    `<button class="badd" onclick="openBatchModal()">＋ รุ่นใหม่</button>`;
+}
+
+function switchBatch(id){
+  const db=loadDB(); db.activeBatchId=id; saveDB(db);
+  renderBatchHeader();
+  if(curPage==='home') renderHome();
+  if(curPage==='pigs') renderPigs();
+  if(curPage==='history'){renderHistory(curFilter);renderPigHistory();}
+}
+
+// ─── HOME ──────────────────────────────────────────────────────────────────
+function renderHome() {
+  const db=loadDB(), batch=getActiveBatch(db);
+  const entries=batch?batch.entries:[];
+  document.getElementById('headerDate').textContent =
+    new Date().toLocaleDateString('th-TH',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+  const pigData = batch ? calcPigCount(batch.pigEvents||[]) : {count:0};
+  document.getElementById('sPigs').textContent = batch&&(batch.pigEvents||[]).length ? fmt(pigData.count) : '—';
+
+  if(!entries.length){
+    ['sRemain','sDays','sAvg'].forEach(id=>document.getElementById(id).textContent='—');
+    document.getElementById('recentList').innerHTML='<div class="empty"><div class="ei">📋</div><p>ยังไม่มีข้อมูล</p></div>';
+    renderChart([]); return;
+  }
+  const last=entries[entries.length-1], calc=calcEntry(last,entries);
+  document.getElementById('sRemain').textContent=fmt(calc.remaining);
+  document.getElementById('sDays').textContent=calc.days?calc.days.toFixed(1):'—';
+  document.getElementById('sAvg').textContent=calc.avg?fmt(calc.avg):'—';
+
+  const days=calc.days||0, pct=Math.min(100,(days/10)*100);
+  const fill=document.getElementById('sbarFill'), lbl=document.getElementById('statusLabel');
+  fill.style.width=pct+'%';
+  document.getElementById('sbarLbl').textContent=days?`เหลือ ${days.toFixed(1)} วัน`:'';
+  if(days<1.5){fill.style.background='#dc2626';lbl.style.cssText='background:#fee2e2;color:#991b1b;font-size:11px;font-weight:600;padding:3px 9px;border-radius:7px';lbl.textContent='⚠️ วิกฤต';}
+  else if(days<3){fill.style.background='#d97706';lbl.style.cssText='background:#fef3c7;color:#92400e;font-size:11px;font-weight:600;padding:3px 9px;border-radius:7px';lbl.textContent='⚡ ต่ำ';}
+  else{fill.style.background='#16a34a';lbl.style.cssText='background:#dcfce7;color:#15803d;font-size:11px;font-weight:600;padding:3px 9px;border-radius:7px';lbl.textContent='✅ ปกติ';}
+
+  const bs=batchStats(batch);
+  document.getElementById('batchSummary').innerHTML=`<div class="bsum"><div class="bt">📊 สรุป ${batch.name}</div><div class="bg2">
+    <div class="bi"><div class="bl">รับเข้าอาหาร</div><div class="bv">${fmt(bs.totalRcv)} กก.</div></div>
+    <div class="bi"><div class="bl">ใช้ไปรวม</div><div class="bv">${fmt(bs.totalUsed)} กก.</div></div>
+    <div class="bi"><div class="bl">บันทึกแล้ว</div><div class="bv">${bs.days} วัน</div></div>
+    <div class="bi"><div class="bl">ถัง 1 ใช้ไป</div><div class="bv">${fmt(bs.totalUsedT1)} กก.</div></div>
+    <div class="bi"><div class="bl">ถัง 2 ใช้ไป</div><div class="bv">${fmt(bs.totalUsedT2)} กก.</div></div>
+  </div></div>`;
+
+  document.getElementById('recentList').innerHTML=[...entries].slice(-5).reverse().map(e=>{
+    const d=new Date(e.date), c2=calcEntry(e,entries);
+    let cls='bg',dStr='—';
+    if(c2.days!=null){dStr=c2.days.toFixed(1)+' วัน';if(c2.days<1.5)cls='br';else if(c2.days<3)cls='by';}
+    const t1str=c2.usedT1!=null&&c2.usedT1>0?fmt(c2.usedT1):'—';
+    const t2str=c2.usedT2!=null&&c2.usedT2>0?fmt(c2.usedT2):'—';
+    return`<div class="erow"><div class="edtb"><div class="day">${d.getDate()}</div><div class="mon">${MONTHS[d.getMonth()]}</div></div>
+      <div class="einf">
+        <div class="w">คงเหลือ ${fmt(c2.remaining)} กก.${e.received?` · 🚛 ${fmt(e.received)} กก.`:''}</div>
+        <div class="s" style="display:flex;gap:10px;margin-top:2px">
+          <span>ถัง1 ใช้ <b>${t1str}</b></span><span>ถัง2 ใช้ <b>${t2str}</b></span>
+        </div>
+      </div>
+      <span class="ebadge ${cls}">${dStr}</span></div>`;
+  }).join('');
+  renderChart(entries);
+}
+
+// ─── PIGS PAGE ─────────────────────────────────────────────────────────────
+function renderPigs() {
+  const db=loadDB(), batch=getActiveBatch(db);
+  const evts=(batch?batch.pigEvents:[])||[];
+  const {count,totals}=calcPigCount(evts);
+  const hasData=evts.filter(e=>!PIG_META.includes(e.type)).length>0;
+
+  document.getElementById('pigHero').innerHTML=`<div class="pig-hero">
+    <div class="ph-top"><h3>🐷 จำนวนหมู — ${batch?batch.name:''}</h3></div>
+    <div class="ph-count">${hasData?fmt(count):'—'}</div>
+    <div class="ph-lbl">ตัวในฟาร์ม</div>
+    <div class="ph-grid">
+      <div class="ph-item"><div class="pi-val">${fmt(totals['รับเข้า'])}</div><div class="pi-lbl">รับเข้า</div></div>
+      <div class="ph-item"><div class="pi-val">${fmt(totals['ขาย'])}</div><div class="pi-lbl">ขาย</div></div>
+      <div class="ph-item"><div class="pi-val">${fmt(totals['ตาย'])}</div><div class="pi-lbl">ตาย</div></div>
+      <div class="ph-item"><div class="pi-val">${fmt(totals['ย้าย'])}</div><div class="pi-lbl">ย้าย</div></div>
+      <div class="ph-item"><div class="pi-val">${fmt(totals['คัดทิ้ง'])}</div><div class="pi-lbl">คัดทิ้ง</div></div>
+    </div></div>`;
+
+  renderWeightFcr();
+
+  if(!evts.length){
+    document.getElementById('pigEventList').innerHTML='<div class="empty"><div class="ei">🐷</div><p>กดปุ่มด้านบนเพื่อบันทึก</p></div>'; return;
+  }
+  document.getElementById('pigEventList').innerHTML=[...evts].reverse().map(e=>{
+    const cfg=EVT_CFG[e.type]||{icon:'📝',cls:'note',sign:''};
+    const isPos=PIG_POSITIVE.includes(e.type), isMeta=PIG_META.includes(e.type);
+    return`<div class="eitem">
+      <div class="etag ${cfg.cls}">${cfg.icon}</div>
+      <div class="einfo"><div class="et">${e.type} · ${fmtDate(e.date)}</div>${e.note?`<div class="es">${e.note}</div>`:''}</div>
+      ${!isMeta?`<div class="enum ${isPos?'pos':'neg'}">${cfg.sign}${fmt(e.count)}</div>`:''}
+      <button onclick="deletePigEvent(${e.id})" style="margin-left:4px;width:24px;height:24px;border-radius:6px;border:none;background:#fee2e2;color:#dc2626;cursor:pointer;font-size:11px;flex-shrink:0">✕</button>
+    </div>`;
+  }).join('');
+}
+
+// ─── WEIGHT & FCR ──────────────────────────────────────────────────────────
+let _wModalType = 'current';
+
+function renderWeightFcr() {
+  const db=loadDB(), batch=getActiveBatch(db);
+  const wr=(batch?.weightRecords||[]).filter(w=>w.avgWeight!=null);
+  const bs=batchStats(batch||{entries:[]});
+  const {count:pigCount}=calcPigCount((batch?.pigEvents||[]));
+
+  const intakeAvg = batch?.intakeAvgWeight ?? null;
+  const latestWr = wr[wr.length-1];
+  const currentAvg = latestWr ? latestWr.avgWeight : null;
+  const gainPerPig = (intakeAvg!=null && currentAvg!=null) ? currentAvg - intakeAvg : null;
+  const totalGain = (gainPerPig!=null && pigCount>0) ? gainPerPig * pigCount : null;
+
+  let fcrVal=null, fcrCls='none', fcrLabel='ยังไม่มีข้อมูล';
+  if(totalGain!=null && totalGain>0) {
+    fcrVal = bs.totalUsed / totalGain;
+    if(fcrVal<2.5){fcrCls='good';fcrLabel='ดีมาก';}
+    else if(fcrVal<3.0){fcrCls='ok';fcrLabel='ปกติ';}
+    else{fcrCls='bad';fcrLabel='ควรปรับปรุง';}
+  }
+
+  const recentWr=wr.slice(-3).reverse();
+
+  document.getElementById('weightFcrSection').innerHTML=`
+  <div class="card" style="margin-bottom:12px">
+    <div class="wf-hd" style="margin-bottom:12px">
+      <div class="wf-hd-title">⚖️ น้ำหนักหมู</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div style="background:#f0fdf4;border-radius:12px;padding:12px">
+        <div style="font-size:10px;color:#6b7280;margin-bottom:3px">น้ำหนักรับเข้าเฉลี่ย</div>
+        <div style="font-size:22px;font-weight:800;color:#15803d;line-height:1">${intakeAvg!=null?intakeAvg.toFixed(1):'—'}</div>
+        <div style="font-size:10px;color:#6b7280;margin-bottom:8px">กก./ตัว</div>
+        <button onclick="openWeightModal('intake')" style="width:100%;padding:6px;border-radius:8px;border:none;background:#dcfce7;color:#15803d;font-size:11px;font-weight:600;font-family:inherit;cursor:pointer">${intakeAvg!=null?'✏️ แก้ไข':'+ ตั้งค่า'}</button>
+      </div>
+      <div style="background:#eff6ff;border-radius:12px;padding:12px">
+        <div style="font-size:10px;color:#6b7280;margin-bottom:3px">น้ำหนักปัจจุบันเฉลี่ย</div>
+        <div style="font-size:22px;font-weight:800;color:#1d4ed8;line-height:1">${currentAvg!=null?currentAvg.toFixed(1):'—'}</div>
+        <div style="font-size:10px;color:#6b7280;margin-bottom:8px">กก./ตัว</div>
+        <button onclick="openWeightModal('current')" style="width:100%;padding:6px;border-radius:8px;border:none;background:#dbeafe;color:#1d4ed8;font-size:11px;font-weight:600;font-family:inherit;cursor:pointer">+ บันทึก</button>
+      </div>
+    </div>
+    ${gainPerPig!=null?`<div style="background:#faf5ff;border-radius:10px;padding:10px;margin-bottom:10px;text-align:center">
+      <div style="font-size:10px;color:#7c3aed;font-weight:600;margin-bottom:2px">น้ำหนักเพิ่มขึ้น/ตัว</div>
+      <div style="font-size:20px;font-weight:800;color:#7c3aed">${gainPerPig>0?'+':''}${gainPerPig.toFixed(1)} กก./ตัว</div>
+    </div>`:''}
+    ${recentWr.length?`<div class="wt-history" style="margin-bottom:8px">${recentWr.map(w=>`
+      <div class="wt-item">
+        <div class="wd">${fmtDate(w.date)}</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="wv">${w.avgWeight.toFixed(1)} กก./ตัว</div>
+          <button onclick="deleteWeight(${w.id})" style="width:22px;height:22px;border-radius:5px;border:none;background:#fee2e2;color:#dc2626;cursor:pointer;font-size:10px;flex-shrink:0">✕</button>
+        </div>
+      </div>`).join('')}</div>`:''}
+
+    <div class="fcr-wrap">
+      <div class="fcr-row">
+        <div class="fcr-title">📐 FCR (Feed Conversion Ratio)</div>
+        <span class="fcr-badge ${fcrCls}">${fcrLabel}</span>
+      </div>
+      <div class="fcr-num-row">
+        <div class="fcr-num" style="color:${fcrCls==='good'?'#15803d':fcrCls==='ok'?'#d97706':fcrCls==='bad'?'#dc2626':'#9ca3af'}">${fcrVal!=null?fcrVal.toFixed(2):'—'}</div>
+        <div class="fcr-num-sub">กก.อาหาร / กก.น้ำหนักที่เพิ่ม</div>
+      </div>
+      <div class="fcr-detail">
+        <div class="fcr-di"><div class="fdl">อาหารที่ใช้ไปทั้งหมด</div><div class="fdv">${fmt(bs.totalUsed)} กก.</div></div>
+        <div class="fcr-di"><div class="fdl">น้ำหนักที่เพิ่มรวม</div><div class="fdv">${totalGain!=null?fmt(Math.round(totalGain))+' กก.':'ยังไม่มีข้อมูล'}</div></div>
+      </div>
+      <div style="margin-top:8px;padding:8px;background:#f9fafb;border-radius:8px;font-size:10px;color:var(--gray);line-height:1.6">
+        สูตร: อาหารรวม ÷ (น้ำหนักปัจจุบัน − น้ำหนักรับเข้า) × จำนวนหมู<br>
+        เกณฑ์: <span style="color:#15803d;font-weight:600">&lt;2.5 ดีมาก</span> · <span style="color:#d97706;font-weight:600">2.5–3.0 ปกติ</span> · <span style="color:#dc2626;font-weight:600">&gt;3.0 ควรปรับ</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+function openWeightModal(type) {
+  _wModalType = type || 'current';
+  const isIntake = _wModalType === 'intake';
+  document.getElementById('wModalTitle').textContent = isIntake ? '🐣 น้ำหนักรับเข้าเฉลี่ย' : '⚖️ น้ำหนักปัจจุบันเฉลี่ย';
+  document.getElementById('wDateWrap').style.display = isIntake ? 'none' : 'block';
+  document.getElementById('wDate').value = new Date().toISOString().split('T')[0];
+  document.getElementById('wAvgWeight').value = '';
+  document.getElementById('wNote').value = '';
+  if(isIntake) {
+    const db=loadDB(), batch=getActiveBatch(db);
+    if(batch?.intakeAvgWeight) document.getElementById('wAvgWeight').value = batch.intakeAvgWeight;
+  }
+  document.getElementById('ovWeight').classList.add('open');
+}
+
+function saveWeight() {
+  const avgWeight = parseFloat(document.getElementById('wAvgWeight').value);
+  const note = document.getElementById('wNote').value.trim();
+  if(isNaN(avgWeight)||avgWeight<=0){showToast('⚠️ ใส่น้ำหนักเฉลี่ย กก./ตัว ด้วย');return;}
+  const db=loadDB(), batch=getActiveBatch(db);
+  if(_wModalType === 'intake') {
+    batch.intakeAvgWeight = avgWeight;
+  } else {
+    const date = document.getElementById('wDate').value;
+    if(!date){showToast('⚠️ เลือกวันที่ด้วย');return;}
+    if(!batch.weightRecords) batch.weightRecords=[];
+    batch.weightRecords.push({id:Date.now(),date,avgWeight,note});
+    batch.weightRecords.sort((a,b)=>new Date(a.date)-new Date(b.date));
+  }
+  saveDB(db);
+  document.getElementById('ovWeight').classList.remove('open');
+  showToast('✅ บันทึกน้ำหนักแล้ว');
+  renderWeightFcr();
+}
+
+function deleteWeight(id) {
+  if(!confirm('ลบรายการนี้?'))return;
+  const db=loadDB(), batch=getActiveBatch(db);
+  batch.weightRecords=(batch.weightRecords||[]).filter(w=>w.id!==id);
+  saveDB(db); renderWeightFcr(); showToast('🗑️ ลบแล้ว');
+}
+
+// ─── PIG MODAL ─────────────────────────────────────────────────────────────
+let currentPigType='';
+const PIG_INFO={
+  'รับเข้า':{icon:'🚛',sub:'จำนวนหมูที่รับเข้าฟาร์มวันนี้'},
+  'ขาย':    {icon:'💰',sub:'จำนวนหมูที่ขายออกไป'},
+  'ตาย':    {icon:'💀',sub:'จำนวนหมูที่ตาย'},
+  'ย้าย':   {icon:'🚚',sub:'จำนวนหมูที่ย้ายออก'},
+  'คัดทิ้ง':{icon:'🗑️',sub:'จำนวนหมูที่คัดออกจากฝูง'},
+  'หมายเหตุ':{icon:'📝',sub:'บันทึกข้อความทั่วไป'},
+};
+
+function openPigModal(type) {
+  currentPigType=type;
+  const info=PIG_INFO[type]||{icon:'📝',sub:''};
+  document.getElementById('pmIcon').textContent=info.icon;
+  document.getElementById('pmTitle').textContent=type;
+  document.getElementById('pmSub').textContent=info.sub;
+  document.getElementById('pmDate').value=new Date().toISOString().split('T')[0];
+  document.getElementById('pmCount').value='';
+  document.getElementById('pmNote').value='';
+  document.getElementById('pmCountWrap').style.display=type==='หมายเหตุ'?'none':'block';
+  document.getElementById('ovPig').classList.add('open');
+}
+
+function savePigEvent() {
+  const date=document.getElementById('pmDate').value;
+  const count=parseInt(document.getElementById('pmCount').value)||0;
+  const note=document.getElementById('pmNote').value.trim();
+  if(!date){showToast('⚠️ เลือกวันที่ด้วย');return;}
+  if(currentPigType!=='หมายเหตุ'&&count<=0){showToast('⚠️ ใส่จำนวนด้วย');return;}
+  const db=loadDB(), batch=getActiveBatch(db);
+  if(!batch.pigEvents) batch.pigEvents=[];
+  batch.pigEvents.push({id:Date.now(),type:currentPigType,date,count,note});
+  batch.pigEvents.sort((a,b)=>new Date(a.date)-new Date(b.date));
+  saveDB(db);
+  document.getElementById('ovPig').classList.remove('open');
+  showToast(`✅ บันทึก${currentPigType}แล้ว`);
+  renderPigs();
+  if(curPage==='home') renderHome();
+}
+
+function deletePigEvent(id) {
+  if(!confirm('ลบรายการนี้?'))return;
+  const db=loadDB(),batch=getActiveBatch(db);
+  batch.pigEvents=(batch.pigEvents||[]).filter(e=>e.id!==id);
+  saveDB(db); renderPigs(); showToast('🗑️ ลบแล้ว');
+}
+
+// ─── FORM ──────────────────────────────────────────────────────────────────
+function resetForm(){
+  const today=new Date().toISOString().split('T')[0];
+  document.getElementById('fDate').value=today;
+  ['fW1','fW2','fRcv'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('cbRcv').checked=false;
+  document.getElementById('rcvField').style.display='none';
+  document.getElementById('fpreview').style.display='none';
+  checkSameDay(today);
+}
+function checkSameDay(date){
+  const batch=getActiveBatch(loadDB());
+  const exists=batch&&batch.entries.some(e=>e.date===date);
+  document.getElementById('sameDayWarn').style.display=exists?'block':'none';
+  if(exists){
+    const e=batch.entries.find(e=>e.date===date);
+    document.getElementById('fW1').value=e.w1||'';
+    document.getElementById('fW2').value=e.w2||'';
+    if(e.received){document.getElementById('cbRcv').checked=true;document.getElementById('rcvField').style.display='block';document.getElementById('fRcv').value=e.received;}
+    updatePreview();
+  }
+}
+document.getElementById('cbRcv').addEventListener('change',function(){
+  document.getElementById('rcvField').style.display=this.checked?'block':'none'; updatePreview();
+});
+document.getElementById('fDate').addEventListener('change',function(){ checkSameDay(this.value); updatePreview(); });
+['fW1','fW2','fRcv'].forEach(id=>document.getElementById(id).addEventListener('input',updatePreview));
+
+function updatePreview(){
+  const w1=parseFloat(document.getElementById('fW1').value)||0;
+  const w2=parseFloat(document.getElementById('fW2').value)||0;
+  if(!w1&&!w2){document.getElementById('fpreview').style.display='none';return;}
+  const rcv=document.getElementById('cbRcv').checked?parseFloat(document.getElementById('fRcv').value)||0:0;
+  const fDate=document.getElementById('fDate').value;
+  const allEntries=(getActiveBatch(loadDB())||{entries:[]}).entries;
+  const entries=allEntries.filter(e=>e.date<fDate);
+  const rem=w1+w2;
+  let used=null,avg=null;
+  if(entries.length){
+    const last=entries[entries.length-1];
+    used=(last.w1||0)+(last.w2||0)+rcv-rem;
+    const ua=[];
+    for(let i=Math.max(1,entries.length-5);i<entries.length;i++){
+      const p=entries[i-1],c=entries[i];
+      const u=(p.w1||0)+(p.w2||0)+(c.received||0)-((c.w1||0)+(c.w2||0));
+      if(u>0)ua.push(u);
+    }
+    if(ua.length)avg=ua.reduce((a,b)=>a+b)/ua.length;
+  }
+  document.getElementById('pRemain').textContent=fmt(rem)+' กก.';
+  document.getElementById('pUsed').textContent=used!=null?fmt(used)+' กก.':'—';
+  document.getElementById('pDays').textContent=avg&&avg>0?(rem/avg).toFixed(1)+' วัน':'—';
+  document.getElementById('pAvg').textContent=avg?fmt(avg)+' กก./วัน':'—';
+  document.getElementById('fpreview').style.display='block';
+}
+
+function saveEntry(){
+  const date=document.getElementById('fDate').value;
+  const w1=parseFloat(document.getElementById('fW1').value)||0;
+  const w2=parseFloat(document.getElementById('fW2').value)||0;
+  if(!date){showToast('⚠️ เลือกวันที่ด้วย');return;}
+  const rcv=document.getElementById('cbRcv').checked?parseFloat(document.getElementById('fRcv').value)||0:0;
+  const db=loadDB(), batch=getActiveBatch(db);
+  const existIdx=batch.entries.findIndex(e=>e.date===date);
+  if(existIdx>=0){
+    const oldId=batch.entries[existIdx].id;
+    batch.entries[existIdx]={id:oldId,date,w1,w2,received:rcv};
+    showToast('✅ อัปเดตข้อมูลวันนี้แล้ว');
+  } else {
+    batch.entries.push({id:Date.now(),date,w1,w2,received:rcv});
+    batch.entries.sort((a,b)=>new Date(a.date)-new Date(b.date));
+    showToast('✅ บันทึกแล้ว');
+  }
+  saveDB(db);
+  setTimeout(()=>showPage('home',document.querySelector('.nb')),600);
+}
+
+// ─── HISTORY ───────────────────────────────────────────────────────────────
+document.getElementById('filterRow').querySelectorAll('.fchip').forEach(btn=>{
+  btn.addEventListener('click',function(){
+    document.querySelectorAll('.fchip').forEach(b=>b.classList.remove('active'));
+    this.classList.add('active'); curFilter=this.dataset.f; renderHistory(curFilter);
+  });
+});
+
+function renderHistory(filter){
+  const db=loadDB(), batch=getActiveBatch(db);
+  let entries=batch?[...batch.entries]:[];
+  const now=new Date();
+  if(filter==='7'){const c=new Date(now-7*86400000).toISOString().split('T')[0];entries=entries.filter(e=>e.date>=c);}
+  if(filter==='30'){const c=new Date(now-30*86400000).toISOString().split('T')[0];entries=entries.filter(e=>e.date>=c);}
+  if(filter==='rcv')entries=entries.filter(e=>e.received>0);
+  const all=batch?batch.entries:[];
+  if(!entries.length){document.getElementById('historyList').innerHTML='<div class="empty"><div class="ei">📋</div><p>ไม่มีข้อมูล</p></div>';return;}
+  document.getElementById('historyList').innerHTML=[...entries].reverse().map(e=>{
+    const c=calcEntry(e,all);
+    let ec='',dc='gc';
+    if(c.days!=null){if(c.days<1.5){ec='dg';dc='rc2';}else if(c.days<3){ec='wn';dc='yc';}}
+    if(e.received>0)ec='rc';
+    return`<div class="hentry ${ec}" id="he-${e.id}">
+      <button class="delbtn" onclick="delFeed(${e.id})">✕</button>
+      <div class="he-hd"><div class="he-dt">📅 ${fmtDate(e.date)}</div>${e.received?`<div class="he-rc">🚛 +${fmt(e.received)} กก.</div>`:''}</div>
+      <div class="he-g">
+        <div class="he-i"><div class="hl">ถัง 1</div><div class="hv">${fmt(e.w1)}</div></div>
+        <div class="he-i"><div class="hl">ถัง 2</div><div class="hv">${fmt(e.w2)}</div></div>
+        <div class="he-i"><div class="hl">คงเหลือ</div><div class="hv gc">${fmt(c.remaining)}</div></div>
+        <div class="he-i"><div class="hl">ใช้ไปรวม</div><div class="hv">${c.used!=null?fmt(c.used):'—'}</div></div>
+        <div class="he-i"><div class="hl">ถัง1 ใช้ไป</div><div class="hv">${c.usedT1!=null&&c.usedT1>0?fmt(c.usedT1):'—'}</div></div>
+        <div class="he-i"><div class="hl">ถัง2 ใช้ไป</div><div class="hv">${c.usedT2!=null&&c.usedT2>0?fmt(c.usedT2):'—'}</div></div>
+        <div class="he-i" style="grid-column:span 2"><div class="hl">ใช้ได้อีก</div><div class="hv ${dc}">${c.days!=null?c.days.toFixed(2)+' วัน':'—'}</div></div>
+      </div></div>`;
+  }).join('');
+}
+
+function renderPigHistory(){
+  const db=loadDB(), batch=getActiveBatch(db);
+  const evts=(batch?batch.pigEvents:[])||[];
+  if(!evts.length){document.getElementById('pigHistoryList').innerHTML='<div class="empty"><div class="ei">🐷</div><p>ยังไม่มีข้อมูล</p></div>';return;}
+  let running=0;
+  const withRunning=[...evts].map(e=>{
+    if(!PIG_META.includes(e.type)){
+      if(PIG_POSITIVE.includes(e.type))running+=e.count||0;
+      else running-=e.count||0;
+    }
+    return{...e,running};
+  });
+  document.getElementById('pigHistoryList').innerHTML=[...withRunning].reverse().map(e=>{
+    const cfg=EVT_CFG[e.type]||{icon:'📝',cls:'note',sign:''};
+    const isPos=PIG_POSITIVE.includes(e.type), isMeta=PIG_META.includes(e.type);
+    return`<div class="hentry${isPos?' rc':''}" id="pe-${e.id}">
+      <button class="delbtn" onclick="deletePigEvent(${e.id});renderPigHistory()">✕</button>
+      <div class="he-hd">
+        <div class="he-dt">${cfg.icon} ${e.type} · ${fmtDate(e.date)}</div>
+        ${!isMeta?`<div class="he-rc" style="background:${isPos?'#dbeafe':'#fee2e2'};color:${isPos?'#1d4ed8':'#991b1b'}">${cfg.sign}${fmt(e.count)} ตัว</div>`:''}
+      </div>
+      <div class="he-g">
+        ${!isMeta?`<div class="he-i" style="grid-column:span 2"><div class="hl">คงเหลือสะสม</div><div class="hv gc">${fmt(e.running)} ตัว</div></div>`:''}
+        ${e.note?`<div class="he-i" style="grid-column:span ${isMeta?4:2}"><div class="hl">หมายเหตุ</div><div class="hv" style="font-size:12px;font-weight:400">${e.note}</div></div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function delFeed(id){
+  if(!confirm('ลบรายการนี้?'))return;
+  const db=loadDB(),batch=getActiveBatch(db);
+  batch.entries=batch.entries.filter(e=>e.id!==id);
+  saveDB(db); renderHistory(curFilter); showToast('🗑️ ลบแล้ว');
+}
+
+// ─── CHART ─────────────────────────────────────────────────────────────────
+function renderChart(entries){
+  const canvas=document.getElementById('chartCanvas');
+  const ctx=canvas.getContext('2d');
+  const W=canvas.parentElement.clientWidth-24;
+  canvas.width=W; canvas.height=120; ctx.clearRect(0,0,W,120);
+  const last8=entries.slice(-8);
+  if(last8.length<2){ctx.fillStyle='#9ca3af';ctx.font='11px sans-serif';ctx.textAlign='center';ctx.fillText('ต้องการข้อมูลอย่างน้อย 2 วัน',W/2,60);return;}
+  const ud=[];
+  for(let i=1;i<last8.length;i++){const p=last8[i-1],c=last8[i];ud.push({date:c.date,used:Math.max(0,(p.w1||0)+(p.w2||0)+(c.received||0)-((c.w1||0)+(c.w2||0)))});}
+  const maxV=Math.max(...ud.map(d=>d.used),1),pad={t:10,r:8,b:28,l:38};
+  const cW=W-pad.l-pad.r,cH=120-pad.t-pad.b,bW=Math.min(28,(cW/ud.length)-5);
+  [.25,.5,.75,1].forEach(p=>{
+    const y=pad.t+cH*(1-p);
+    ctx.strokeStyle='#f3f4f6';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(W-pad.r,y);ctx.stroke();
+    ctx.fillStyle='#9ca3af';ctx.font='9px sans-serif';ctx.textAlign='right';ctx.fillText(Math.round(maxV*p),pad.l-3,y+3);
+  });
+  ud.forEach((d,i)=>{
+    const x=pad.l+(i+.5)*(cW/ud.length),bH=(d.used/maxV)*cH,y=pad.t+cH-bH;
+    const grad=ctx.createLinearGradient(0,y,0,y+bH);grad.addColorStop(0,'#16a34a');grad.addColorStop(1,'#86efac');
+    ctx.fillStyle=grad;const rx=4,bx=x-bW/2;
+    ctx.beginPath();ctx.moveTo(bx+rx,y);ctx.lineTo(bx+bW-rx,y);ctx.arcTo(bx+bW,y,bx+bW,y+rx,rx);ctx.lineTo(bx+bW,y+bH);ctx.lineTo(bx,y+bH);ctx.lineTo(bx,y+rx);ctx.arcTo(bx,y,bx+rx,y,rx);ctx.closePath();ctx.fill();
+    const dt=new Date(d.date);ctx.fillStyle='#6b7280';ctx.font='9px sans-serif';ctx.textAlign='center';
+    ctx.fillText(`${dt.getDate()} ${MONTHS[dt.getMonth()]}`,x,120-pad.b+11);
+  });
+}
+
+// ─── BATCH MODAL ───────────────────────────────────────────────────────────
+let _editBatchId = null;
+
+function openBatchEditModal(id) {
+  _editBatchId = id;
+  const db = loadDB();
+  const batch = db.batches.find(b => b.id === id);
+  if (!batch) return;
+  document.getElementById('mbeNameEdit').value = batch.name;
+  // ลบไม่ได้ถ้าเหลือรุ่นเดียว
+  const canDelete = db.batches.length > 1;
+  const delBtn = document.getElementById('delBatchBtn');
+  delBtn.style.display = canDelete ? 'block' : 'none';
+  document.getElementById('ovBatchEdit').classList.add('open');
+}
+
+function saveBatchName() {
+  const name = document.getElementById('mbeNameEdit').value.trim();
+  if (!name) { showToast('⚠️ ใส่ชื่อรุ่นด้วย'); return; }
+  const db = loadDB();
+  const batch = db.batches.find(b => b.id === _editBatchId);
+  if (batch) { batch.name = name; saveDB(db); }
+  document.getElementById('ovBatchEdit').classList.remove('open');
+  renderBatchHeader();
+  if (curPage === 'home') renderHome();
+  if (curPage === 'pigs') renderPigs();
+  showToast('✅ เปลี่ยนชื่อแล้ว');
+}
+
+function deleteBatch() {
+  const db = loadDB();
+  if (db.batches.length <= 1) { showToast('⚠️ ต้องมีอย่างน้อย 1 รุ่น'); return; }
+  const batch = db.batches.find(b => b.id === _editBatchId);
+  if (!batch) return;
+  if (!confirm(`ลบ "${batch.name}" และข้อมูลทั้งหมดในรุ่นนี้?\nไม่สามารถกู้คืนได้`)) return;
+  db.batches = db.batches.filter(b => b.id !== _editBatchId);
+  // ถ้าลบ active batch ให้เปลี่ยนไปรุ่นแรก
+  if (db.activeBatchId === _editBatchId) db.activeBatchId = db.batches[0].id;
+  saveDB(db);
+  document.getElementById('ovBatchEdit').classList.remove('open');
+  renderBatchHeader();
+  showPage('home', document.querySelector('.nb'));
+  showToast(`🗑️ ลบ${batch.name}แล้ว`);
+}
+
+function openBatchModal(){
+  const db=loadDB();
+  document.getElementById('mbName').value=`รุ่น ${db.batches.length+1}`;
+  document.getElementById('mbDate').value=new Date().toISOString().split('T')[0];
+  document.getElementById('ovBatch').classList.add('open');
+}
+function confirmNewBatch(){
+  const name=document.getElementById('mbName').value.trim();
+  const startDate=document.getElementById('mbDate').value;
+  if(!name||!startDate){showToast('⚠️ กรอกข้อมูลให้ครบ');return;}
+  const db=loadDB();
+  const newId=Math.max(...db.batches.map(b=>b.id))+1;
+  db.batches.push({id:newId,name,startDate,entries:[],pigEvents:[],weightRecords:[],intakeAvgWeight:null,expenseRecords:[]});
+  db.activeBatchId=newId; saveDB(db);
+  document.getElementById('ovBatch').classList.remove('open');
+  renderBatchHeader(); showPage('home',document.querySelector('.nb'));
+  showToast(`🎉 สร้าง${name}แล้ว`);
+}
+
+// ─── EXPENSE ───────────────────────────────────────────────────────────────
+const EXP_CFG = {
+  electricity: {icon:'💡', label:'ค่าไฟ',    color:'#fbbf24', bg:'#fffbeb', monthly:true},
+  fuel:        {icon:'⛽', label:'ค่าน้ำมัน', color:'#f97316', bg:'#fff7ed', monthly:false},
+  water:       {icon:'💧', label:'ค่าน้ำ',   color:'#38bdf8', bg:'#f0f9ff', monthly:false},
+  labor:       {icon:'👷', label:'ค่าแรง',   color:'#10b981', bg:'#ecfdf5', monthly:true},
+  other:       {icon:'📋', label:'อื่นๆ',    color:'#8b5cf6', bg:'#faf5ff', monthly:false},
+};
+let _expType = 'electricity';
+
+function fmtMoney(v){ return Number(v).toLocaleString('th-TH',{maximumFractionDigits:0}); }
+function fmtMonth(s){ const [y,m]=s.split('-'); return`${MONTHS[parseInt(m)-1]} ${parseInt(y)+543}`; }
+
+function renderExpense() {
+  const db=loadDB(), batch=getActiveBatch(db);
+  const records = (batch?.expenseRecords || []);
+
+  const totals = {electricity:0, fuel:0, water:0, labor:0, other:0};
+  records.forEach(r => { if(totals[r.type]!==undefined) totals[r.type] += r.amount||0; });
+  const grandTotal = Object.values(totals).reduce((a,b)=>a+b, 0);
+
+  document.getElementById('expSummary').innerHTML = `
+    <div class="exp-total">
+      <div class="ett">💰 รวมค่าใช้จ่าย ${batch?.name||''}</div>
+      <div class="etv">${fmtMoney(grandTotal)} บาท</div>
+    </div>
+    <div class="exp-sum">
+      ${Object.entries(EXP_CFG).map(([type,cfg])=>`
+        <div class="exp-sc" style="background:${cfg.bg}">
+          <div class="ei2">${cfg.icon}</div>
+          <div class="ev" style="color:${cfg.color}">${fmtMoney(totals[type])}</div>
+          <div class="el">${cfg.label} (บาท)</div>
+        </div>`).join('')}
+    </div>`;
+
+  document.getElementById('expSections').innerHTML = Object.entries(EXP_CFG).map(([type,cfg])=>{
+    const items = records.filter(r=>r.type===type).sort((a,b)=>{
+      const da = a.period||a.date, db2 = b.period||b.date;
+      return da > db2 ? -1 : da < db2 ? 1 : 0;
+    });
+    return `<div class="exp-sec">
+      <div class="exp-sec-hd">
+        <div class="exp-sec-title"><span>${cfg.icon}</span>${cfg.label}</div>
+        <button class="exp-add-btn" onclick="openExpenseModal('${type}')" style="background:${cfg.bg};color:${cfg.color}">+ เพิ่ม</button>
+      </div>
+      ${items.length ? items.map(r=>`
+        <div class="exp-item">
+          <div>
+            <div class="ed">${EXP_CFG[r.type]?.monthly?fmtMonth(r.period):fmtDate(r.date)}${r.name?` · ${r.name}`:''}</div>
+            ${r.note?`<div style="font-size:10px;color:var(--gray);margin-top:1px">${r.note}</div>`:''}
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="ea">${fmtMoney(r.amount)} <span style="font-size:10px;color:var(--gray)">บาท</span></div>
+            <button onclick="deleteExpense(${r.id})" style="width:22px;height:22px;border-radius:5px;border:none;background:#fee2e2;color:#dc2626;cursor:pointer;font-size:10px;flex-shrink:0">✕</button>
+          </div>
+        </div>`).join('')
+      : `<div class="exp-empty">ยังไม่มีข้อมูล</div>`}
+    </div>`;
+  }).join('');
+}
+
+function openExpenseModal(type) {
+  _expType = type;
+  const cfg = EXP_CFG[type];
+  document.getElementById('expModalTitle').textContent = `${cfg.icon} เพิ่ม${cfg.label}`;
+  const isMonthly = !!cfg.monthly;
+  const isOther = type === 'other';
+  document.getElementById('expMonthWrap').style.display = isMonthly ? 'block' : 'none';
+  document.getElementById('expDateWrap').style.display  = isMonthly ? 'none' : 'block';
+  document.getElementById('expNameWrap').style.display  = isOther ? 'block' : 'none';
+  const now = new Date();
+  document.getElementById('expMonth').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  document.getElementById('expDate').value  = now.toISOString().split('T')[0];
+  document.getElementById('expName').value  = '';
+  document.getElementById('expAmount').value = '';
+  document.getElementById('expNote').value   = '';
+  document.getElementById('ovExp').classList.add('open');
+}
+
+function saveExpense() {
+  const amount = parseFloat(document.getElementById('expAmount').value);
+  if(isNaN(amount)||amount<=0){showToast('⚠️ ใส่จำนวนเงินด้วย');return;}
+  const isElec = _expType === 'electricity';
+  const isOther = _expType === 'other';
+  const period = document.getElementById('expMonth').value;
+  const date   = document.getElementById('expDate').value;
+  const name   = document.getElementById('expName').value.trim();
+  const note   = document.getElementById('expNote').value.trim();
+  const isMonthly2 = EXP_CFG[_expType]?.monthly;
+  if(isMonthly2 && !period){showToast('⚠️ เลือกเดือนด้วย');return;}
+  if(!isMonthly2 && !date){showToast('⚠️ เลือกวันที่ด้วย');return;}
+  if(isOther && !name){showToast('⚠️ ใส่รายการด้วย');return;}
+  const db=loadDB(), batch=getActiveBatch(db);
+  if(!batch.expenseRecords) batch.expenseRecords=[];
+  const rec = {id:Date.now(), type:_expType, amount, note};
+  if(isMonthly2) rec.period = period; else rec.date = date;
+  if(isOther) rec.name = name;
+  batch.expenseRecords.push(rec);
+  saveDB(db);
+  document.getElementById('ovExp').classList.remove('open');
+  showToast(`✅ บันทึก${EXP_CFG[_expType].label}แล้ว`);
+  renderExpense();
+}
+
+function deleteExpense(id) {
+  if(!confirm('ลบรายการนี้?'))return;
+  const db=loadDB(), batch=getActiveBatch(db);
+  batch.expenseRecords=(batch.expenseRecords||[]).filter(r=>r.id!==id);
+  saveDB(db); renderExpense(); showToast('🗑️ ลบแล้ว');
+}
+
+// ─── EXPORT EXCEL ──────────────────────────────────────────────────────────
+function exportToExcel() {
+  if(typeof XLSX === 'undefined'){ showToast('⚠️ กรุณาเชื่อมต่ออินเตอร์เน็ตก่อน Export'); return; }
+  const db=loadDB(), batch=getActiveBatch(db);
+  if(!batch){ showToast('⚠️ ไม่มีข้อมูล'); return; }
+
+  // ── Sheet 1: อาหาร ──
+  const feedHeader = ['วันที่','ถัง 1 (กก.)','ถัง 2 (กก.)','รับเข้า (กก.)','คงเหลือ (กก.)','ใช้ไป (กก.)','เฉลี่ย/วัน (กก.)','ใช้ได้อีก (วัน)','ถัง1 ใช้ (กก.)','ถัง2 ใช้ (กก.)'];
+  const feedRows = batch.entries.map(e => {
+    const c = calcEntry(e, batch.entries);
+    return [
+      e.date,
+      e.w1||0, e.w2||0, e.received||0,
+      c.remaining,
+      c.used!=null ? Math.round(c.used) : '',
+      c.avg!=null ? +c.avg.toFixed(1) : '',
+      c.days!=null ? +c.days.toFixed(1) : '',
+      c.usedT1!=null&&c.usedT1>0 ? Math.round(c.usedT1) : '',
+      c.usedT2!=null&&c.usedT2>0 ? Math.round(c.usedT2) : '',
+    ];
+  });
+  const bs = batchStats(batch);
+  const feedSummary = [
+    [],
+    ['สรุป','รับเข้าอาหารรวม (กก.)',bs.totalRcv],
+    ['','ใช้ไปรวม (กก.)',bs.totalUsed],
+    ['','ถัง1 ใช้ไปรวม (กก.)',bs.totalUsedT1],
+    ['','ถัง2 ใช้ไปรวม (กก.)',bs.totalUsedT2],
+    ['','จำนวนวันที่บันทึก (วัน)',bs.days],
+  ];
+  const ws1 = XLSX.utils.aoa_to_sheet([feedHeader, ...feedRows, ...feedSummary]);
+  ws1['!cols'] = [{wch:12},{wch:10},{wch:10},{wch:12},{wch:12},{wch:12},{wch:14},{wch:14},{wch:12},{wch:12}];
+
+  // ── Sheet 2: จำนวนหมู ──
+  const pigHeader = ['วันที่','ประเภท','จำนวน (ตัว)','หมายเหตุ','คงเหลือสะสม (ตัว)'];
+  let running = 0;
+  const pigRows = (batch.pigEvents||[]).map(e => {
+    const isMeta = PIG_META.includes(e.type);
+    const isPos = PIG_POSITIVE.includes(e.type);
+    if(!isMeta){ running += isPos ? (e.count||0) : -(e.count||0); }
+    return [e.date, e.type, isMeta?'':e.count||0, e.note||'', isMeta?'':running];
+  });
+  const ws2 = XLSX.utils.aoa_to_sheet([pigHeader, ...pigRows]);
+  ws2['!cols'] = [{wch:12},{wch:12},{wch:14},{wch:30},{wch:16}];
+
+  // ── สร้างไฟล์ ──
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws1, 'อาหาร');
+  XLSX.utils.book_append_sheet(wb, ws2, 'จำนวนหมู');
+  const today = new Date().toISOString().split('T')[0];
+  XLSX.writeFile(wb, `${batch.name}_${today}.xlsx`);
+  showToast('📥 ดาวน์โหลด Excel แล้ว');
+}
+
+// ─── CLOUD SYNC ────────────────────────────────────────────────────────────
+const SYNC_KEY = 'pigFarmSyncUrl';
+function getSyncUrl(){ return localStorage.getItem(SYNC_KEY)||''; }
+
+function setSyncDot(s){
+  const d=document.getElementById('syncDot');
+  if(!d)return;
+  d.textContent = s==='syncing'?'🔄':s==='ok'?'☁️':'⚠️';
+}
+
+async function syncUp(){
+  const url=getSyncUrl(); if(!url)return;
+  try{
+    setSyncDot('syncing');
+    const body='data='+encodeURIComponent(localStorage.getItem(DB_KEY)||'{}');
+    await fetch(url,{method:'POST',redirect:'follow',headers:{'Content-Type':'application/x-www-form-urlencoded'},body});
+    setSyncDot('ok');
+  }catch(e){ setSyncDot('error'); }
+}
+
+async function syncDown(){
+  const url=getSyncUrl(); if(!url)return false;
+  try{
+    setSyncDot('syncing');
+    const res=await fetch(url+'?t='+Date.now(),{redirect:'follow'});
+    const text=await res.text();
+    const cloud=JSON.parse(text);
+    if(cloud&&cloud.batches){
+      localStorage.setItem(DB_KEY,text);
+      setSyncDot('ok');
+      return true;
+    }
+    setSyncDot('ok'); return false;
+  }catch(e){ setSyncDot('error'); return false; }
+}
+
+function openSyncModal(){
+  document.getElementById('syncUrlInput').value=getSyncUrl();
+  document.getElementById('syncTestResult').textContent='';
+  document.getElementById('ovSync').classList.add('open');
+}
+
+async function testSync(){
+  const url=document.getElementById('syncUrlInput').value.trim();
+  const el=document.getElementById('syncTestResult');
+  if(!url){el.style.color='#dc2626';el.textContent='⚠️ ยังไม่ได้ใส่ URL';return;}
+  el.style.color='#6b7280'; el.textContent='🔄 กำลังทดสอบ...';
+  try{
+    const res=await fetch(url+'?t='+Date.now(),{redirect:'follow'});
+    const text=await res.text();
+    JSON.parse(text);
+    el.style.color='#15803d'; el.textContent='✅ เชื่อมต่อสำเร็จ!';
+  }catch(e){
+    el.style.color='#dc2626'; el.textContent='❌ เชื่อมต่อไม่ได้ — ตรวจสอบ URL อีกครั้ง';
+  }
+}
+
+async function saveSyncUrl(){
+  const url=document.getElementById('syncUrlInput').value.trim();
+  localStorage.setItem(SYNC_KEY,url);
+  document.getElementById('ovSync').classList.remove('open');
+  if(!url){showToast('🗑️ ลบ URL แล้ว');return;}
+  showToast('🔄 กำลังดึงข้อมูลจาก Cloud...');
+  const synced=await syncDown();
+  if(synced){
+    showToast('✅ ซิงค์สำเร็จ! โหลดข้อมูลล่าสุดแล้ว');
+    renderBatchHeader();
+    renderHome();
+  }else{
+    showToast('☁️ เชื่อมต่อแล้ว กำลัง backup ขึ้น Cloud...');
+    syncUp();
+  }
+}
+
+async function initSync(){
+  if(!getSyncUrl())return;
+  const synced=await syncDown();
+  if(synced){ renderBatchHeader(); renderHome(); }
+}
+
+// ─── TOAST ─────────────────────────────────────────────────────────────────
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+
+// ─── INIT ──────────────────────────────────────────────────────────────────
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+renderBatchHeader();
+renderHome();
+initSync();
+</script>
+</body>
+</html>
