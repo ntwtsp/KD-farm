@@ -327,10 +327,12 @@
     <div class="fs"><label>วันที่</label><input type="date" id="fDate" /></div>
     <label class="rtoggle" for="cbRcv"><input type="checkbox" id="cbRcv" /><span class="tl">🚛 มีอาหารรับเข้าวันนี้</span></label>
     <div id="rcvField" style="display:none" class="fs"><label>รับเข้า (กก.)</label><input type="number" id="fRcv" placeholder="0" min="0" inputmode="numeric" /></div>
-    <div class="ig">
-      <div class="fs"><label>ถัง 1 (กก.)</label><input type="number" id="fW1" placeholder="0" min="0" inputmode="numeric" /></div>
-      <div class="fs"><label>ถัง 2 (กก.)</label><input type="number" id="fW2" placeholder="0" min="0" inputmode="numeric" /></div>
+    <div id="tankFields">
+      <div class="fs" id="tankRow-0" style="display:flex;align-items:center;gap:8px">
+        <div style="flex:1"><label>ปริมาณอาหาร (กก.)</label><input type="number" class="tank-input" id="fT0" placeholder="0" min="0" inputmode="numeric" oninput="updatePreview()" /></div>
+      </div>
     </div>
+    <button type="button" onclick="addTankField()" style="margin-bottom:12px;background:#f0fdf4;border:1.5px dashed #16a34a;color:#16a34a;border-radius:10px;padding:8px 16px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;width:100%">＋ เพิ่มถัง</button>
     <div class="fpreview" id="fpreview" style="display:none">
       <div class="pt">📋 ผลคำนวณ</div>
       <div class="pg">
@@ -514,6 +516,46 @@ function loadDB() {
 function saveDB(db) { localStorage.setItem(DB_KEY, JSON.stringify(db)); syncUp(); }
 function getActiveBatch(db) { return db.batches.find(b => b.id === db.activeBatchId); }
 
+// ─── TANK HELPERS ──────────────────────────────────────────────────────────
+function entryTanks(entry) {
+  if (entry.tanks && entry.tanks.length) return entry.tanks.map(v=>v||0);
+  return [entry.w1||0, entry.w2||0];
+}
+function entryTotal(entry) { return entryTanks(entry).reduce((a,b)=>a+b,0); }
+
+let _tankCount = 1;
+function addTankField() {
+  const idx = document.querySelectorAll('.tank-input').length;
+  _tankCount = idx + 1;
+  const wrap = document.createElement('div');
+  wrap.className = 'fs';
+  wrap.id = 'tankRow-' + idx;
+  wrap.style.cssText = 'display:flex;align-items:center;gap:8px';
+  wrap.innerHTML = `<div style="flex:1"><label>ถัง ${idx+1} (กก.)</label><input type="number" class="tank-input" id="fT${idx}" placeholder="0" min="0" inputmode="numeric" oninput="updatePreview()" /></div><button type="button" onclick="removeTankField(${idx})" style="margin-top:18px;width:32px;height:32px;border-radius:8px;border:none;background:#fee2e2;color:#dc2626;font-size:14px;cursor:pointer;flex-shrink:0">✕</button>`;
+  document.getElementById('tankFields').appendChild(wrap);
+}
+function removeTankField(idx) {
+  const el = document.getElementById('tankRow-' + idx);
+  if (el) { el.remove(); updatePreview(); }
+}
+function getTankValues() {
+  return Array.from(document.querySelectorAll('.tank-input')).map(el=>parseFloat(el.value)||0);
+}
+function renderTankInputs(tanks) {
+  const container = document.getElementById('tankFields');
+  container.innerHTML = '';
+  (tanks && tanks.length ? tanks : [0]).forEach((v, idx) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'fs';
+    wrap.id = 'tankRow-' + idx;
+    wrap.style.cssText = 'display:flex;align-items:center;gap:8px';
+    const label = idx === 0 ? 'ปริมาณอาหาร (กก.)' : `ถัง ${idx+1} (กก.)`;
+    const removeBtn = idx > 0 ? `<button type="button" onclick="removeTankField(${idx})" style="margin-top:18px;width:32px;height:32px;border-radius:8px;border:none;background:#fee2e2;color:#dc2626;font-size:14px;cursor:pointer;flex-shrink:0">✕</button>` : '';
+    wrap.innerHTML = `<div style="flex:1"><label>${label}</label><input type="number" class="tank-input" id="fT${idx}" placeholder="0" min="0" inputmode="numeric" oninput="updatePreview()" value="${v||''}" /></div>${removeBtn}`;
+    container.appendChild(wrap);
+  });
+}
+
 // ─── PIG CALC ──────────────────────────────────────────────────────────────
 const PIG_POSITIVE = ['รับเข้า'];
 const PIG_META = ['หมายเหตุ'];
@@ -534,40 +576,39 @@ function calcPigCount(pigEvents) {
 // ─── FEED CALC ─────────────────────────────────────────────────────────────
 function calcEntry(entry, entries) {
   const idx = entries.findIndex(e => e.id === entry.id);
-  const remaining = (entry.w1||0)+(entry.w2||0);
-  let used = null, usedT1 = null, usedT2 = null;
+  const remaining = entryTotal(entry);
+  let used = null, usedTanks = null;
   if (idx > 0) {
     const prev = entries[idx-1];
-    used = (prev.w1||0)+(prev.w2||0)+(entry.received||0)-remaining;
-    usedT1 = (prev.w1||0) - (entry.w1||0);
-    usedT2 = (prev.w2||0) - (entry.w2||0);
+    used = entryTotal(prev) + (entry.received||0) - remaining;
+    const pt = entryTanks(prev), ct = entryTanks(entry);
+    usedTanks = pt.map((v,i) => v - (ct[i]||0));
   }
   const ua = [];
   for (let i=Math.max(1,idx-4); i<=idx; i++) {
     const p=entries[i-1],c=entries[i];
-    const u=(p.w1||0)+(p.w2||0)+(c.received||0)-((c.w1||0)+(c.w2||0));
+    const u=entryTotal(p)+(c.received||0)-entryTotal(c);
     if(u>0) ua.push(u);
   }
   const avg = ua.length ? ua.reduce((a,b)=>a+b)/ua.length : null;
-  return { remaining, used, usedT1, usedT2, avg, days: avg&&avg>0 ? remaining/avg : null };
+  return { remaining, used, usedTanks, avg, days: avg&&avg>0 ? remaining/avg : null };
 }
 
 function batchStats(batch) {
   const entries = batch.entries;
-  let totalRcv=0, usedArr=[], totalUsedT1=0, totalUsedT2=0;
+  let totalRcv=0, usedArr=[], totalUsedPerTank=[];
   entries.forEach(e => totalRcv += (e.received||0));
   for (let i=1;i<entries.length;i++){
     const p=entries[i-1],c=entries[i];
-    const u=(p.w1||0)+(p.w2||0)+(c.received||0)-((c.w1||0)+(c.w2||0));
+    const u=entryTotal(p)+(c.received||0)-entryTotal(c);
     if(u>0) usedArr.push(u);
-    const d1=(p.w1||0)-(c.w1||0), d2=(p.w2||0)-(c.w2||0);
-    if(d1>0) totalUsedT1+=d1;
-    if(d2>0) totalUsedT2+=d2;
+    const pt=entryTanks(p),ct=entryTanks(c);
+    pt.forEach((v,ti) => { const d=v-(ct[ti]||0); if(d>0){totalUsedPerTank[ti]=(totalUsedPerTank[ti]||0)+d;} });
   }
   const last = entries[entries.length-1];
-  const currentRemaining = last ? (last.w1||0)+(last.w2||0) : 0;
+  const currentRemaining = last ? entryTotal(last) : 0;
   const totalUsed = totalRcv - currentRemaining;
-  return { totalRcv, totalUsed, totalUsedT1, totalUsedT2, days:entries.length,
+  return { totalRcv, totalUsed, totalUsedPerTank, days:entries.length,
     avgPerDay: usedArr.length?usedArr.reduce((a,b)=>a+b)/usedArr.length:0 };
 }
 
@@ -657,25 +698,25 @@ function renderHome() {
   else{fill.style.background='#16a34a';lbl.style.cssText='background:#dcfce7;color:#15803d;font-size:11px;font-weight:600;padding:3px 9px;border-radius:7px';lbl.textContent='✅ ปกติ';}
 
   const bs=batchStats(batch);
+  const tankSummary = bs.totalUsedPerTank.map((v,i)=>
+    `<div class="bi"><div class="bl">ถัง ${i+1} ใช้ไป</div><div class="bv">${fmt(v)} กก.</div></div>`).join('');
   document.getElementById('batchSummary').innerHTML=`<div class="bsum"><div class="bt">📊 สรุป ${batch.name}</div><div class="bg2">
     <div class="bi"><div class="bl">รับเข้าอาหาร</div><div class="bv">${fmt(bs.totalRcv)} กก.</div></div>
     <div class="bi"><div class="bl">ใช้ไปรวม</div><div class="bv">${fmt(bs.totalUsed)} กก.</div></div>
     <div class="bi"><div class="bl">บันทึกแล้ว</div><div class="bv">${bs.days} วัน</div></div>
-    <div class="bi"><div class="bl">ถัง 1 ใช้ไป</div><div class="bv">${fmt(bs.totalUsedT1)} กก.</div></div>
-    <div class="bi"><div class="bl">ถัง 2 ใช้ไป</div><div class="bv">${fmt(bs.totalUsedT2)} กก.</div></div>
+    ${tankSummary}
   </div></div>`;
 
   document.getElementById('recentList').innerHTML=[...entries].slice(-5).reverse().map(e=>{
     const d=new Date(e.date), c2=calcEntry(e,entries);
     let cls='bg',dStr='—';
     if(c2.days!=null){dStr=c2.days.toFixed(1)+' วัน';if(c2.days<1.5)cls='br';else if(c2.days<3)cls='by';}
-    const t1str=c2.usedT1!=null&&c2.usedT1>0?fmt(c2.usedT1):'—';
-    const t2str=c2.usedT2!=null&&c2.usedT2>0?fmt(c2.usedT2):'—';
+    const tankUsedStr = c2.usedTanks ? c2.usedTanks.map((v,i)=>`<span>ถัง${i+1} ใช้ <b>${v>0?fmt(v):'—'}</b></span>`).join('') : '';
     return`<div class="erow"><div class="edtb"><div class="day">${d.getDate()}</div><div class="mon">${MONTHS[d.getMonth()]}</div></div>
       <div class="einf">
         <div class="w">คงเหลือ ${fmt(c2.remaining)} กก.${e.received?` · 🚛 ${fmt(e.received)} กก.`:''}</div>
-        <div class="s" style="display:flex;gap:10px;margin-top:2px">
-          <span>ถัง1 ใช้ <b>${t1str}</b></span><span>ถัง2 ใช้ <b>${t2str}</b></span>
+        <div class="s" style="display:flex;gap:10px;margin-top:2px;flex-wrap:wrap">
+          ${tankUsedStr}
         </div>
       </div>
       <span class="ebadge ${cls}">${dStr}</span></div>`;
@@ -891,7 +932,8 @@ function deletePigEvent(id) {
 function resetForm(){
   const today=new Date().toISOString().split('T')[0];
   document.getElementById('fDate').value=today;
-  ['fW1','fW2','fRcv'].forEach(id=>document.getElementById(id).value='');
+  renderTankInputs([]);
+  document.getElementById('fRcv').value='';
   document.getElementById('cbRcv').checked=false;
   document.getElementById('rcvField').style.display='none';
   document.getElementById('fpreview').style.display='none';
@@ -903,8 +945,7 @@ function checkSameDay(date){
   document.getElementById('sameDayWarn').style.display=exists?'block':'none';
   if(exists){
     const e=batch.entries.find(e=>e.date===date);
-    document.getElementById('fW1').value=e.w1||'';
-    document.getElementById('fW2').value=e.w2||'';
+    renderTankInputs(entryTanks(e));
     if(e.received){document.getElementById('cbRcv').checked=true;document.getElementById('rcvField').style.display='block';document.getElementById('fRcv').value=e.received;}
     updatePreview();
   }
@@ -913,25 +954,24 @@ document.getElementById('cbRcv').addEventListener('change',function(){
   document.getElementById('rcvField').style.display=this.checked?'block':'none'; updatePreview();
 });
 document.getElementById('fDate').addEventListener('change',function(){ checkSameDay(this.value); updatePreview(); });
-['fW1','fW2','fRcv'].forEach(id=>document.getElementById(id).addEventListener('input',updatePreview));
+document.getElementById('fRcv').addEventListener('input',updatePreview);
 
 function updatePreview(){
-  const w1=parseFloat(document.getElementById('fW1').value)||0;
-  const w2=parseFloat(document.getElementById('fW2').value)||0;
-  if(!w1&&!w2){document.getElementById('fpreview').style.display='none';return;}
+  const tanks=getTankValues();
+  const rem=tanks.reduce((a,b)=>a+b,0);
+  if(!rem){document.getElementById('fpreview').style.display='none';return;}
   const rcv=document.getElementById('cbRcv').checked?parseFloat(document.getElementById('fRcv').value)||0:0;
   const fDate=document.getElementById('fDate').value;
   const allEntries=(getActiveBatch(loadDB())||{entries:[]}).entries;
   const entries=allEntries.filter(e=>e.date<fDate);
-  const rem=w1+w2;
   let used=null,avg=null;
   if(entries.length){
     const last=entries[entries.length-1];
-    used=(last.w1||0)+(last.w2||0)+rcv-rem;
+    used=entryTotal(last)+rcv-rem;
     const ua=[];
     for(let i=Math.max(1,entries.length-5);i<entries.length;i++){
       const p=entries[i-1],c=entries[i];
-      const u=(p.w1||0)+(p.w2||0)+(c.received||0)-((c.w1||0)+(c.w2||0));
+      const u=entryTotal(p)+(c.received||0)-entryTotal(c);
       if(u>0)ua.push(u);
     }
     if(ua.length)avg=ua.reduce((a,b)=>a+b)/ua.length;
@@ -945,18 +985,17 @@ function updatePreview(){
 
 function saveEntry(){
   const date=document.getElementById('fDate').value;
-  const w1=parseFloat(document.getElementById('fW1').value)||0;
-  const w2=parseFloat(document.getElementById('fW2').value)||0;
+  const tanks=getTankValues();
   if(!date){showToast('⚠️ เลือกวันที่ด้วย');return;}
   const rcv=document.getElementById('cbRcv').checked?parseFloat(document.getElementById('fRcv').value)||0:0;
   const db=loadDB(), batch=getActiveBatch(db);
   const existIdx=batch.entries.findIndex(e=>e.date===date);
   if(existIdx>=0){
     const oldId=batch.entries[existIdx].id;
-    batch.entries[existIdx]={id:oldId,date,w1,w2,received:rcv};
+    batch.entries[existIdx]={id:oldId,date,tanks,received:rcv};
     showToast('✅ อัปเดตข้อมูลวันนี้แล้ว');
   } else {
-    batch.entries.push({id:Date.now(),date,w1,w2,received:rcv});
+    batch.entries.push({id:Date.now(),date,tanks,received:rcv});
     batch.entries.sort((a,b)=>new Date(a.date)-new Date(b.date));
     showToast('✅ บันทึกแล้ว');
   }
@@ -990,12 +1029,10 @@ function renderHistory(filter){
       <button class="delbtn" onclick="delFeed(${e.id})">✕</button>
       <div class="he-hd"><div class="he-dt">📅 ${fmtDate(e.date)}</div>${e.received?`<div class="he-rc">🚛 +${fmt(e.received)} กก.</div>`:''}</div>
       <div class="he-g">
-        <div class="he-i"><div class="hl">ถัง 1</div><div class="hv">${fmt(e.w1)}</div></div>
-        <div class="he-i"><div class="hl">ถัง 2</div><div class="hv">${fmt(e.w2)}</div></div>
+        ${entryTanks(e).map((v,i)=>`<div class="he-i"><div class="hl">${i===0?'ปริมาณอาหาร':'ถัง '+(i+1)}</div><div class="hv">${fmt(v)}</div></div>`).join('')}
         <div class="he-i"><div class="hl">คงเหลือ</div><div class="hv gc">${fmt(c.remaining)}</div></div>
         <div class="he-i"><div class="hl">ใช้ไปรวม</div><div class="hv">${c.used!=null?fmt(c.used):'—'}</div></div>
-        <div class="he-i"><div class="hl">ถัง1 ใช้ไป</div><div class="hv">${c.usedT1!=null&&c.usedT1>0?fmt(c.usedT1):'—'}</div></div>
-        <div class="he-i"><div class="hl">ถัง2 ใช้ไป</div><div class="hv">${c.usedT2!=null&&c.usedT2>0?fmt(c.usedT2):'—'}</div></div>
+        ${c.usedTanks?c.usedTanks.map((v,i)=>`<div class="he-i"><div class="hl">ถัง${i+1} ใช้ไป</div><div class="hv">${v>0?fmt(v):'—'}</div></div>`).join(''):''}
         <div class="he-i" style="grid-column:span 2"><div class="hl">ใช้ได้อีก</div><div class="hv ${dc}">${c.days!=null?c.days.toFixed(2)+' วัน':'—'}</div></div>
       </div></div>`;
   }).join('');
@@ -1246,31 +1283,28 @@ function exportToExcel() {
   if(!batch){ showToast('⚠️ ไม่มีข้อมูล'); return; }
 
   // ── Sheet 1: อาหาร ──
-  const feedHeader = ['วันที่','ถัง 1 (กก.)','ถัง 2 (กก.)','รับเข้า (กก.)','คงเหลือ (กก.)','ใช้ไป (กก.)','เฉลี่ย/วัน (กก.)','ใช้ได้อีก (วัน)','ถัง1 ใช้ (กก.)','ถัง2 ใช้ (กก.)'];
+  const maxTanks = Math.max(...batch.entries.map(e=>entryTanks(e).length), 1);
+  const tankHeaders = Array.from({length:maxTanks},(_,i)=>i===0?'ปริมาณอาหาร (กก.)':`ถัง ${i+1} (กก.)`);
+  const tankUsedHeaders = Array.from({length:maxTanks},(_,i)=>`ถัง${i+1} ใช้ (กก.)`);
+  const feedHeader = ['วันที่',...tankHeaders,'รับเข้า (กก.)','คงเหลือ (กก.)','ใช้ไป (กก.)','เฉลี่ย/วัน (กก.)','ใช้ได้อีก (วัน)',...tankUsedHeaders];
   const feedRows = batch.entries.map(e => {
     const c = calcEntry(e, batch.entries);
-    return [
-      e.date,
-      e.w1||0, e.w2||0, e.received||0,
-      c.remaining,
-      c.used!=null ? Math.round(c.used) : '',
-      c.avg!=null ? +c.avg.toFixed(1) : '',
-      c.days!=null ? +c.days.toFixed(1) : '',
-      c.usedT1!=null&&c.usedT1>0 ? Math.round(c.usedT1) : '',
-      c.usedT2!=null&&c.usedT2>0 ? Math.round(c.usedT2) : '',
-    ];
+    const tanks = entryTanks(e);
+    const tankVals = Array.from({length:maxTanks},(_,i)=>tanks[i]||0);
+    const usedVals = Array.from({length:maxTanks},(_,i)=>c.usedTanks&&c.usedTanks[i]>0?Math.round(c.usedTanks[i]):'');
+    return [e.date,...tankVals,e.received||0,c.remaining,c.used!=null?Math.round(c.used):'',c.avg!=null?+c.avg.toFixed(1):'',c.days!=null?+c.days.toFixed(1):'',...usedVals];
   });
   const bs = batchStats(batch);
+  const tankSumRows = bs.totalUsedPerTank.map((v,i)=>['',`ถัง${i+1} ใช้ไปรวม (กก.)`,v]);
   const feedSummary = [
     [],
     ['สรุป','รับเข้าอาหารรวม (กก.)',bs.totalRcv],
     ['','ใช้ไปรวม (กก.)',bs.totalUsed],
-    ['','ถัง1 ใช้ไปรวม (กก.)',bs.totalUsedT1],
-    ['','ถัง2 ใช้ไปรวม (กก.)',bs.totalUsedT2],
+    ...tankSumRows,
     ['','จำนวนวันที่บันทึก (วัน)',bs.days],
   ];
   const ws1 = XLSX.utils.aoa_to_sheet([feedHeader, ...feedRows, ...feedSummary]);
-  ws1['!cols'] = [{wch:12},{wch:10},{wch:10},{wch:12},{wch:12},{wch:12},{wch:14},{wch:14},{wch:12},{wch:12}];
+  ws1['!cols'] = feedHeader.map(()=>({wch:14}));
 
   // ── Sheet 2: จำนวนหมู ──
   const pigHeader = ['วันที่','ประเภท','จำนวน (ตัว)','หมายเหตุ','คงเหลือสะสม (ตัว)'];
