@@ -1,4 +1,4 @@
-const CACHE = 'kd-farm-v2';
+const CACHE = 'kd-farm-v3';
 const ASSETS = ['/KD-farm/', '/KD-farm/index.html'];
 
 self.addEventListener('install', e => {
